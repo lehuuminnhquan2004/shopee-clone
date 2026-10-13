@@ -3,21 +3,22 @@ import { products } from '../data/products'
 import ProductCard  from '../components/ProductCard'
 import '../App.css'
 
-
-type healthRes={
-  status:string,
-  service:string,
-};
 type Category={
   id:number,
   name:string,
 }
+type HomePageProps={
+  searchTerm: string;
+}
 
-export default function HomePage(){
+export default function HomePage({searchTerm}:HomePageProps){
 
   const[categories,setCategories]=useState<Category[]>([]);
   const [errCategories, setErrCategories]=useState<string|null>(null);
   const [loadingCategories, setLoadingCategories]=useState(true);
+
+  const keyword=searchTerm.trim().toLowerCase();
+  const filteredProducts=products.filter((product)=>product.name.trim().toLowerCase().includes(keyword));
 
   useEffect(()=>{
     let ignore:boolean=false;
@@ -74,13 +75,21 @@ export default function HomePage(){
       </section>
 
       <section>
-        <div className="product-grid">
-          {products.map((product)=>{
-            return(
-              <ProductCard key={product.id} product={product}/>
-            )
-        })}
-      </div>
+        {filteredProducts.length===0 ? (
+          <p>Không tìm thấy sản phẩm</p>
+        ):(
+          <>
+            <p>Tìm thấy{filteredProducts.length} sản phẩm</p>
+            <div className="product-grid">
+              {filteredProducts.map((product)=>{
+                return(
+                  <ProductCard key={product.id} product={product}/>
+                )
+            })}
+            </div>
+          </>
+        )}
+        
       </section>
     </>
     

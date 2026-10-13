@@ -1,4 +1,12 @@
-export default function Header(){
+type HeaderProps={
+    searchTerm: string;
+    onSearchChange:(value:string)=>void;
+}
+
+export default function Header({
+    searchTerm,
+    onSearchChange,
+}:HeaderProps ){
     return(
         <header className="site-header">
             <div className="container header-content">
@@ -8,7 +16,9 @@ export default function Header(){
                 className="search-input"
                 type="search"
                 placeholder="Tìm kiếm sản phẩm..."
-                aria-label="Tìm kiếm sản phẩm"></input>
+                aria-label="Tìm kiếm sản phẩm"
+                value={searchTerm}
+                onChange={(event)=>onSearchChange(event.target.value)}/>
             </div>
         </header>
     );
