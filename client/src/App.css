@@ -66,6 +66,11 @@
   min-width: 0;
   padding: 8px;
 }
+.product-card img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 
 @media (min-width: 640px) {
   .product-grid {

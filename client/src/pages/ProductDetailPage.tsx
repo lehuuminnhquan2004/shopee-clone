@@ -20,17 +20,17 @@ export default function ProductDetailPage(){
                     <section>
                         <Link to="/">Trang chủ</Link>
                         <h3>{product.name}</h3>
-                        {!product.description && <p>{product.description}</p>}
+                        {product.description && <p>{product.description}</p>}
                         <p>Mã shop: {product.shopId}</p>
-                        <select aria-label={`Chọn biến thể cho ${product.name}`}>
-                                    {product.variants.map((variant)=>{
-                                    return(
-                                        <option key={variant.id} value={variant.id}>
-                                        {variant.color} {variant.size} {variant.price} {variant.stock>0?variant.stock:"hết hàng"}
-                                        </option>
-                                    )
-                                    })}
-                        </select>
+                        {product.attributes && 
+                        product.attributes.map((attribute)=>{
+                            return(
+                                <ul>
+                                    <li>{attribute.name}: {attribute.value}</li>
+                                </ul>
+                            )
+                        })
+                        }
                     </section>
                 )
                 

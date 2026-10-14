@@ -79,7 +79,7 @@ export default function HomePage({searchTerm}:HomePageProps){
           <p>Không tìm thấy sản phẩm</p>
         ):(
           <>
-            <p>Tìm thấy{filteredProducts.length} sản phẩm</p>
+            <p>Tìm thấy {filteredProducts.length} sản phẩm</p>
             <div className="product-grid">
               {filteredProducts.map((product)=>{
                 return(

@@ -11,16 +11,9 @@ export default function ProductCard({product}:ProductCardProps){
                 <Link to={`/products/${product.id}`}>
                     <h3>{product.name}</h3>
                 </Link>
+                <div><img src={product.images[1].url}/></div>
                 {product.description && <p>{product.description}</p>}
-                <select aria-label={'Chọn biến thể'}>
-                            {product.variants.map((variant)=>{
-                            return(
-                                <option key={variant.id} value={variant.id}>
-                                {variant.color} {variant.size} {variant.price} {variant.stock>0?variant.stock:"hết hàng"}
-                                </option>
-                            )
-                            })}
-                </select>
+                
             </article>
         
     )
