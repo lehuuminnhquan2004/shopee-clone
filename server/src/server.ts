@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors'
 import {prisma} from './lib/prisma.js'
+import { categoriesRouter } from './routes/categories.route.js';
 
 const app=express();
 const PORT=3000;
@@ -11,24 +12,8 @@ app.use(
     }),
 );
 
-const categories=[
-  {
-    "id": 1,
-    "name": "Thời trang nam"
-  },
-  {
-    "id": 2,
-    "name": "Mỹ phẩm"
-  },
-  {
-    "id": 3,
-    "name": "Thiết bị điện tử"
-  }
-]
+app.use('/api/categories',categoriesRouter);
 
-app.get('/api/categories', (_req,res)=>{
-    res.status(200).json(categories);
-});
 
 app.get('/health',(_req,res)=>{
     res.status(200).json({
