@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { products } from '../data/products'
 import ProductCard from '../components/ProductCard'
-import { Link } from 'react-router'
-import '../App.css'
+import './HomePage.css'
 import CategoryCard from '../components/CategoryCard'
 
 type Category = {

@@ -16,3 +16,8 @@ export type CategoryCardData = {
   name: string;
   iconUrl: string | null;
 };
+
+export type CategoryChild = {
+  id: string;
+  name: string;
+};

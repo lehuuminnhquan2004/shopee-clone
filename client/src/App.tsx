@@ -1,5 +1,5 @@
 import Header from './components/Header'
-import {Routes, Route} from 'react-router'
+import { Routes, Route } from 'react-router'
 import { Link } from 'react-router'
 import { useState } from 'react'
 
@@ -7,24 +7,24 @@ import { useState } from 'react'
 import './App.css'
 import HomePage from './pages/HomePage'
 import ProductDetailPage from './pages/ProductDetailPage'
+import CategoryPage from './pages/CategoryPage'
 
-function App(){
+function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
 
-  return(
+  return (
     <>
-      <Header 
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      <Header
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
 
       <main className="container page-content">
         <Routes>
-          <Route path='/' element={<HomePage searchTerm={searchTerm}/>}/>
-
-          <Route path='/products/:productId' element={<ProductDetailPage/>}/>
-
+          <Route path='/' element={<HomePage searchTerm={searchTerm} />} />
+          <Route path='/products/:productId' element={<ProductDetailPage />} />
+          <Route path="/categories/:categoryId" element={<CategoryPage />} />
           <Route
             path="*"
             element={
@@ -36,10 +36,10 @@ function App(){
           />
         </Routes>
       </main>
-     
-      
+
+
     </>
-    
+
   )
 }
 
