@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { products } from '../data/products'
 import ProductCard from '../components/ProductCard'
+import { Link } from 'react-router'
 import '../App.css'
+import CategoryCard from '../components/CategoryCard'
 
 type Category = {
   id: string,
   name: string,
+  iconUrl: string,
 }
 type HomePageProps = {
   searchTerm: string;
@@ -16,6 +19,8 @@ export default function HomePage({ searchTerm }: HomePageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [errCategories, setErrCategories] = useState<string | null>(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
+
+
 
   const [retryCount, setRetryCount] = useState(0);
 
@@ -60,27 +65,38 @@ export default function HomePage({ searchTerm }: HomePageProps) {
 
   return (
     <>
-      <section>
-        <h2>DANH MUC SAN PHAM</h2>
-        {loadingCategories && <p>Loading...</p>}
-        {!loadingCategories && errCategories && (
-          <div>
-            <p role="alert">{errCategories}</p>
-            <button type='button' onClick={()=>(setRetryCount(retryCount+1))}>Thử lại</button>
-          </div>
-        )}
-        {!loadingCategories && !errCategories && categories.length == 0 && <p>Danh muc dang rỗng</p>}
-        {!loadingCategories && !errCategories && categories.length > 0 && (
-          <div>
-            <ul>
-              {
-                categories.map((category) => (
-                  <li key={category.id}>ID: {category.id} Name: {category.name}</li>
-                ))
-              }
-            </ul>
-          </div>
-        )}
+      {/* Hien thi danh muc cha */}
+      <section className="category-section">
+        <h2 className="category-section-title">DANH MỤC</h2>
+
+        <div className="category-section-content">
+          {loadingCategories && <p>Đang tải danh mục...</p>}
+          {!loadingCategories && errCategories && (
+            <div>
+              <p role="alert">{errCategories}</p>
+              <button
+                type="button"
+                onClick={() =>
+                  setRetryCount((previousCount) => previousCount + 1)
+                }
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {!loadingCategories && !errCategories && categories.length === 0 && (<p>Danh mục đang trống</p>)}
+
+          {!loadingCategories && !errCategories && categories.length > 0 && (
+            <div className="category-grid-wrapper">
+              <div className="category-grid">
+                {categories.map((category) => (
+                  <CategoryCard key={category.id} category={category} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <section>

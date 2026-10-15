@@ -18,12 +18,14 @@ export async function getCategories(
             select: {
                 id: true,
                 name: true,
+                iconUrl: true,
             },
         });
 
         const result = categories.map((category) => ({
             id: category.id.toString(),
             name: category.name,
+            iconUrl: category.iconUrl,
         }));
 
         res.status(200).json(result)
