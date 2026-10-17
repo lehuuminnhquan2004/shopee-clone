@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors'
 import {prisma} from './lib/prisma.js'
 import { categoriesRouter } from './routes/categories.route.js';
+import {productsRouter} from './routes/products.route.js'
 
 const app=express();
 const PORT=3000;
@@ -13,14 +14,8 @@ app.use(
 );
 
 app.use('/api/categories',categoriesRouter);
+app.use('/api/products',productsRouter);
 
-
-app.get('/health',(_req,res)=>{
-    res.status(200).json({
-        status:"ok",
-        "service":"shopee-clone-api",
-    });
-});
 app.get('/health/db',async (_req,res)=>{
   try{
     const userCount=await prisma.user.count();

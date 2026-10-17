@@ -1,57 +1,21 @@
-/* DANH MUC */
-.category-section {
-    background: white;
-    border: 1px solid #eee;
-}
-
-.category-section-title {
-    margin: 0;
-    padding: 20px 24px;
-    color: #555;
-    font-size: 18px;
-    font-weight: 400;
-    border-bottom: 1px solid #eee;
-}
-
-.category-section-content {
-    min-height: 160px;
-}
-
-.category-section-content>p,
-.category-section-content>div:not(.category-grid-wrapper) {
-    padding: 20px 24px;
-}
-
-.category-grid-wrapper {
-    overflow-x: auto;
-}
-
-.category-grid {
-    display: grid;
-    grid-template-rows: repeat(2, auto);
-    grid-auto-flow: column;
-    grid-auto-columns: 108px;
-    width: max-content
-}
 
 .category-card {
-    min-height: 150px;
+    height: 150px;
+    min-width: 120px;
     padding: 16px 8px 12px;
     color: #222;
     text-align: center;
     text-decoration: none;
     border-right: 1px solid #eee;
     border-bottom: 1px solid #eee;
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .category-card:hover {
     position: relative;
     z-index: 1;
-    border-color: #ddd;
-    box-shadow: 0 0 8px rgb(0 0 0 / 12%);
+    border-color: #e5e5e5;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .category-icon {
