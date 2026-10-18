@@ -1,6 +1,7 @@
 import { useParams } from 'react-router';
 import { useState, useEffect } from 'react';
 import type { CategoryChild } from '../types/category';
+import ProductSection from '../components/ProductSection';
 
 
 export default function CategoryPage() {
@@ -16,6 +17,22 @@ export default function CategoryPage() {
     setLoading(true);
     setError(null);
     setChildren([]);
+    // async function loadParent() {
+    //     try{
+    //         const reponse=await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}/children`)
+    //         if(!reponse.ok){
+    //             throw new Error('Không lấy được data danh mục');
+    //         }
+    //         const data:CategoryChild[]=await reponse.json();
+    //         if(!ignore)setChildren(data);
+    //     }catch(error){
+    //         if(!ignore){
+    //             setError(error instanceof Error?error.message:"Có lỗi sảy ra");
+    //         }
+    //     }finally{
+    //         if(!ignore) setLoading(false);
+    //     }  
+    // }
 
     async function loadChildren() {
         try{
@@ -56,7 +73,7 @@ export default function CategoryPage() {
             )}
         </aside>
         <section>
-            <p>Sản phẩm sẽ hiển thị ở đây.</p>
+            <ProductSection categoryId={categoryId}/>
         </section>
     </div>
   )

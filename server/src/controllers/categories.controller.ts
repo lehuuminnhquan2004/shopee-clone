@@ -43,7 +43,8 @@ export async function getCategoryChildren(
     res: Response
 ):Promise<void> {
     const {categoryId} = req.params;
-    if(!/^[0-9]{1,19}$/.test(categoryId)){
+    const MAX_BIGINT = 9223372036854775807n;
+    if(!/^[0-9]{1,19}$/.test(categoryId)||BigInt(categoryId)>MAX_BIGINT){
         res.status(400).json({
             message: 'ID danh mục không hợp lệ!'
         })

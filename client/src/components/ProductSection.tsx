@@ -4,10 +4,14 @@ import ProductCard from './ProductCard'
 import './ProductSection.css'
 
 type ProductSectionProps = {
-  searchTerm: string
+  searchTerm?: string,
+  categoryId?:string,
 }
 
-export default function ProductSection({ searchTerm }: ProductSectionProps) {
+export default function ProductSection({ 
+  searchTerm='',
+  categoryId,
+ }: ProductSectionProps) {
   const [products, setProducts] = useState<ProductCardData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -26,7 +30,8 @@ export default function ProductSection({ searchTerm }: ProductSectionProps) {
       setError(null)
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`)
+        const path=categoryId?`/api/products/${categoryId}/products`:`/api/products`;
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${path}`)
         if (!response.ok) {
           throw new Error(`Không lấy được sản phẩm (status=${response.status})`)
         }
@@ -51,7 +56,7 @@ export default function ProductSection({ searchTerm }: ProductSectionProps) {
     return () => {
       ignore = true
     }
-  }, [retryCount])
+  }, [categoryId,retryCount])
 
   return (
     <section className="product-section">
