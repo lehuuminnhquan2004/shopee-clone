@@ -9,6 +9,7 @@ export default function CategoryPage() {
   const[loading,setLoading]=useState(true);
   const[error,setError]=useState<string|null>(null);
   const[children,setChildren]=useState<CategoryChild[]|[]>([]);
+  const[parent,setParent]=useState<CategoryChild|null>(null);
 
   useEffect(()=>{
     let ignore=false;
@@ -17,31 +18,25 @@ export default function CategoryPage() {
     setLoading(true);
     setError(null);
     setChildren([]);
-    async function loadParent() {
-        try{
-            const reponse=await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}`)
-            if(!reponse.ok){
-                throw new Error('Không lấy được data danh mục');
-            }
-            const data:CategoryChild[]=await reponse.json();
-            if(!ignore)setChildren(data);
-        }catch(error){
-            if(!ignore){
-                setError(error instanceof Error?error.message:"Có lỗi sảy ra");
-            }
-        }finally{
-            if(!ignore) setLoading(false);
-        }  
-    }
+    setParent(null)
 
-    async function loadChildren() {
+    async function loadCategory() {
         try{
-            const reponse=await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}/children`)
-            if(!reponse.ok){
+            const [parentReponse,childrenReponse]=await Promise.all([
+                fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}`),
+                fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}/children`)
+            ])
+            if(!parentReponse.ok||!childrenReponse.ok){
                 throw new Error('Không lấy được data danh mục');
             }
-            const data:CategoryChild[]=await reponse.json();
-            if(!ignore)setChildren(data);
+            const [parentData, childrenData]:[CategoryChild,CategoryChild[]]=await Promise.all([
+                parentReponse.json(),
+                childrenReponse.json()
+            ])
+            if(!ignore){
+                setParent(parentData)
+                setChildren(childrenData)
+            }
         }catch(error){
             if(!ignore){
                 setError(error instanceof Error?error.message:"Có lỗi sảy ra");
@@ -50,7 +45,7 @@ export default function CategoryPage() {
             if(!ignore) setLoading(false);
         }  
     }
-    loadChildren();
+    loadCategory();
     return ()=>{
         ignore=true;
     }
@@ -64,8 +59,9 @@ export default function CategoryPage() {
             {!loading && !error && children.length===0 && (
                 <p>Danh mục trống</p>
             )}
-            {!loading && !error && children.length>0 && (
+            {!loading && !error && parent && children.length>0 && (
                 <ul>
+                    <li key={parent.id}>{parent.name}</li>
                     {children.map((category)=>(
                         <li key={category.id}>{category.name}</li>
                     ))}
