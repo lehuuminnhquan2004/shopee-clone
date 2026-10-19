@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import { prisma } from '../lib//prisma.js'
 
 export async function getCategories(
@@ -104,4 +104,38 @@ export async function getCategoryChildren(
         });
     }
 }
-
+export async function getCategoryById(
+    req:Request<{id:string}>,
+    res:Response,
+):Promise<void>{
+    const {id}=req.params;
+    const MAX_BIGINT = 9223372036854775807n;
+    if(!id||!/^[0-9]{1,19}$/.test(id)||BigInt(id)>MAX_BIGINT){
+        res.status(400).json({message:"Dữ liệu không hợp lệ"})
+        return
+    }
+    const id_bigint=BigInt(id)
+    try{
+        const category=await prisma.category.findFirst({
+            where:{
+                id:id_bigint,
+                isActive:true,
+            },
+            select:{
+                id:true,
+                name: true,
+            },
+        })
+        if(!category){
+            res.status(404).json({message: "Không lấy được danh mục"})
+            return
+        }
+        res.status(200).json({
+            id:category.id.toString(),
+            name:category.name
+        })
+    }catch(err){
+        console.error(`Không lấy được dữ liệu`,err)
+        res.status(500).json({message: "Không lấy được dữ liệu"})
+    }
+}
