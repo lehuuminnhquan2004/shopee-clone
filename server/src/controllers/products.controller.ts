@@ -49,21 +49,21 @@ export async function getCategoryIdProducts(
 ): Promise<void> {
     const { categoryId } = req.params;
     const MAX_BIGINT = 9223372036854775807n;
-    if (!/^[0-9]{1,19}$/.test(categoryId)||BigInt(categoryId)>MAX_BIGINT) {
+    if (!/^[0-9]{1,19}$/.test(categoryId) || BigInt(categoryId) > MAX_BIGINT) {
         res.status(400).json({ message: "Thông tin không hợp lệ" })
         return
     }
     const category_id = BigInt(categoryId)
-    try{
-        const category= await prisma.category.findFirst({
-            where:{id:category_id,},
-            select:{isActive:true,},
+    try {
+        const category = await prisma.category.findFirst({
+            where: { id: category_id, },
+            select: { isActive: true, },
         })
-        if(!category||category.isActive===false){
+        if (!category || category.isActive === false) {
             res.status(400).json({ message: "Thông tin không hợp lệ" })
             return
         }
-    }catch (error) {
+    } catch (error) {
         console.error('Không lấy được danh mục', error);
         res.status(500).json({ message: `Không lấy được danh mục` });
         return
@@ -108,4 +108,78 @@ export async function getCategoryIdProducts(
         res.status(500).json({ message: `Không lấy được sản phẩm` });
     }
 
+}
+export async function getProductById(
+    req: Request<{ id: string }>,
+    res: Response
+): Promise<void> {
+    const { id } = req.params
+    const MAX_BIGINT = 9223372036854775807n;
+    if (!id || !/^[0-9]{1,19}$/.test(id) || BigInt(id) > MAX_BIGINT) {
+        res.status(400).json({ message: "Thông tin không hợp lệ" })
+        return
+    }
+    const id_bigint = BigInt(id)
+    try {
+        const product = await prisma.product.findFirst({
+            where: {
+                id: id_bigint,
+                status: 'active',
+            }, select: {
+                id: true,
+                name: true,
+                description: true,
+                minPrice: true,
+                maxPrice: true,
+                ratingAvg: true,
+                ratingCount: true,
+                soldCount: true,
+                images: {
+                    orderBy: [{ position: 'asc' }],
+                    select: {
+                        id: true,
+                        position: true,
+                        url: true
+                    },
+                },
+                shop: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logoUrl: true
+                    },
+                },
+            },
+        })
+        if (!product) {
+            res.status(404).json({ message: "Không tìm thấy sản phẩm" })
+            return
+        }
+        res.status(200).json({
+            id: product.id.toString(),
+            name: product.name,
+            description: product.description??null,
+            minPrice: product.minPrice.toString(),
+            maxPrice: product.maxPrice.toString(),
+            ratingAvg: product.ratingAvg.toString(),
+            ratingCount: product.ratingCount,
+            soldCount: product.soldCount,
+            images: product.images.map((image) => {
+                return ({
+                    id: image.id.toString(),
+                    position: image.position,
+                    url: image.url
+                })
+            }),
+            shop: {
+                id: product.shop.id.toString(),
+                name: product.shop.name,
+                logoUrl: product.shop?.logoUrl ?? null,
+            },
+        })
+    }catch(err){
+        console.error('Không lấy được sản phẩm',err)
+        res.status(500).json({message:"Không lấy được sản phẩm"})
+    }
+    
 }
