@@ -3,7 +3,7 @@ export type ProductCardData={
   name:string;
   minPrice:string;
   soldCount:number;
-  imageUrl?:string|null;
+  imageUrl:string|null;
 }
 
 import type {ShopProductDetailData} from './shop'
@@ -15,11 +15,11 @@ type ImageProductDetailData={
 export type ProductDetailData={
   id:string;
   name:string;
-  description?:string|null;
+  description:string|null;
   minPrice:string;
   maxPrice:string;
-  ratingAvg?:number;
-  ratingCount?:number;
+  ratingAvg:string;
+  ratingCount:number;
   soldCount:number;
   images:ImageProductDetailData[];
   shop:ShopProductDetailData;
