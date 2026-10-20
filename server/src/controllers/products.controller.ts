@@ -149,6 +149,22 @@ export async function getProductById(
                         logoUrl: true
                     },
                 },
+                tiers: {
+                    orderBy: { position: 'asc' },
+                    select: {
+                        id: true,
+                        name: true,
+                        options: {
+                            orderBy: { position: 'asc' },
+                            select: {
+                                id: true,
+                                value: true,
+                                imageUrl: true,
+                            },
+                        },
+                    },
+                },
+
             },
         })
         if (!product) {
@@ -158,7 +174,7 @@ export async function getProductById(
         res.status(200).json({
             id: product.id.toString(),
             name: product.name,
-            description: product.description??null,
+            description: product.description ?? null,
             minPrice: product.minPrice.toString(),
             maxPrice: product.maxPrice.toString(),
             ratingAvg: product.ratingAvg.toString(),
@@ -176,10 +192,19 @@ export async function getProductById(
                 name: product.shop.name,
                 logoUrl: product.shop?.logoUrl ?? null,
             },
+            tiers:product.tiers.map((tier)=>({
+                id:tier.id.toString(),
+                name:tier.name,
+                options:tier.options.map((option)=>({
+                    id:option.id.toString(),
+                    value:option.value,
+                    imageUrl:option.imageUrl??null,
+                }))
+            }))
         })
-    }catch(err){
-        console.error('Không lấy được sản phẩm',err)
-        res.status(500).json({message:"Không lấy được sản phẩm"})
+    } catch (err) {
+        console.error('Không lấy được sản phẩm', err)
+        res.status(500).json({ message: "Không lấy được sản phẩm" })
     }
-    
+
 }
