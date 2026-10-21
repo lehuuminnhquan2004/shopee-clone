@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router'
-import type { ModelProductDetailData, ProductDetailData } from '../types/product';
+import type { ProductDetailData } from '../types/product';
 import { useEffect, useState } from 'react';
 import './ProductDetailPage.css'
 
@@ -10,7 +10,7 @@ export default function ProductDetailPage() {
     const [error, setError] = useState<string | null>(null)
     const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
-   
+
 
     useEffect(() => {
         let ignore = false
@@ -41,13 +41,19 @@ export default function ProductDetailPage() {
 
     }, [productId])
 
-    const selectedOptionsId=product?.tiers.map((tier)=>selectedOptions[tier.id])??[];
-    const selectedModel=
-    product && selectedOptionsId.every((id)=>id!==undefined)
-    ?product.models.find((item)=>item.optionKey===selectedOptionsId.join('-'))
-    :undefined
+    const selectedOptionsId = product?.tiers.map((tier) => selectedOptions[tier.id]) ?? [];
+    const selectedModel =
+        product && selectedOptionsId.every((id) => id !== undefined)
+            ? (product.models.find((item) => item.optionKey === selectedOptionsId.join('-')))
+            : undefined
 
-    const activeImage = product?.images.find((image) => image.id === selectedImageId) ?? product?.images[0]
+    const selectedGalleryImage = product?.images.find((image) => image.id === selectedImageId) ?? null
+    const firstTier = product?.tiers[0];
+    const selectedFirstOption = firstTier?.options.find(
+        (option) => option.id === selectedOptions[firstTier.id],
+    );
+    const activeImageUrl = selectedGalleryImage?.url ?? selectedFirstOption?.imageUrl ?? product?.images[0]?.url
+    const activeImage = product?.images.find((item) => item.url === activeImageUrl);
     return (
         <section className='product-detail'>
             <div>
@@ -57,10 +63,10 @@ export default function ProductDetailPage() {
                 {!loading && !error && product && (
                     <div className="product-detail-layout">
                         <div className="product-detail-gallery">
-                            {activeImage ? (
+                            {activeImageUrl ? (
                                 <img
                                     className='product-detail-main-image'
-                                    src={activeImage.url}
+                                    src={activeImageUrl}
                                     alt={product.name} />
                             ) : (
                                 <p>Sản phẩm chưa có ảnh</p>
@@ -75,9 +81,9 @@ export default function ProductDetailPage() {
                                             onClick={() => setSelectedImageId(image.id)}
                                             type='button'
                                             aria-label={`Xem ảnh ${index + 1}`}
-                                            aria-pressed={activeImage?.id === image.id}
+                                            aria-pressed={selectedGalleryImage?.id === image.id}
                                         >
-                                            <img src={image.url} alt=""/>
+                                            <img src={image.url} alt="" />
                                         </button>
                                     ))}
                                 </div>
@@ -91,7 +97,7 @@ export default function ProductDetailPage() {
                                 Đã bán {product.soldCount}
                             </p>
                             <p className="product-detail-price">
-                                {BigInt(selectedModel?selectedModel.price:product.minPrice).toLocaleString('vi-VN')}₫
+                                {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫
                             </p>
 
                             {product.tiers.length > 0 && (
@@ -108,10 +114,13 @@ export default function ProductDetailPage() {
                                                             type='button'
                                                             className={`product-detail-variant-option ${isSelected ? 'is-active' : ''}`}
                                                             aria-pressed={isSelected}
-                                                            onClick={() => setSelectedOptions((previous) => ({
-                                                                ...previous,
-                                                                [tier.id]: option.id,
-                                                            }))}
+                                                            onClick={() => {
+                                                                setSelectedOptions((previous) => ({
+                                                                    ...previous,
+                                                                    [tier.id]: option.id,
+                                                                }))
+                                                                setSelectedImageId(null);
+                                                            }}
                                                         >
                                                             {option.imageUrl && <img src={option.imageUrl} alt="" />}
                                                             <span>{option.value}</span>
@@ -123,7 +132,10 @@ export default function ProductDetailPage() {
                                     ))}
                                 </div>
                             )}
-                            <div ></div>
+                            <div className='product-detail-actions'>
+                                <button className="product-detail-actions-add-to-cart">Thêm vào giỏ hàng</button>
+                                <button className="product-detail-actions-buy-now">Mua ngay {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫</button>
+                            </div>
                         </div>
 
 

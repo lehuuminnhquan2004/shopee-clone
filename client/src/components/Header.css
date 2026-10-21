@@ -1,0 +1,40 @@
+.site-header {
+  background: #ff6030;
+  color: white;
+  padding-block: 20px;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.site-name {
+  margin: 0;
+  font-size: 24px;
+}
+
+.search-input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgb(0, 0, 0)fff;
+  background-color: white;
+  color: black;
+  border-radius: 6px;
+}
+@media (min-width: 960px) {
+  .header-content {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .site-name {
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+  }
+}

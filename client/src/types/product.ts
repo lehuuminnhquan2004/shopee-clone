@@ -27,7 +27,6 @@ export type ModelProductDetailData={
   name:string;
   price:string;
   optionKey:string;
-  imageUrl:string|null;
 }
 export type ProductDetailData={
   id:string;

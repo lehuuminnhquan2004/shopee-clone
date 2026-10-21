@@ -16,7 +16,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
                 <div className="product-card-body">
                     <h3 className="product-card-name">{product.name}</h3>
-                    <p className="product-card-price">{product.minPrice}</p>
+                    <p className="product-card-price">{BigInt(product.minPrice).toLocaleString('vi-VN')}₫</p>
                 </div>
             </Link>
         </article>

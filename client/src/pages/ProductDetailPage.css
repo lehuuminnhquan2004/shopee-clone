@@ -6,9 +6,16 @@
   background: white;
 }
 
-.product-detail-gallery,
-.product-detail-info {
+.product-detail-gallery{
   min-width: 0;
+}
+.product-detail-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.product-detail-info h1{
+  font-size: 20px;
 }
 
 /* Anh san pham */
@@ -97,7 +104,37 @@
   color: #ee4d2d;
 }
 
-
+/* Nut them vao gio va nut mua */
+.product-detail-actions{
+  padding-top:16px;
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  gap: 12px;
+  margin-top: auto;
+  margin-bottom: 0px;
+  justify-content: center;
+}
+.product-detail-actions-add-to-cart{
+  border: 1px solid #ee4d2d;
+  border-radius: 2px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  color: #ee4d2d;
+}
+.product-detail-actions-add-to-cart:hover{
+  background-color: #fae3c599;
+}
+.product-detail-actions-buy-now{
+  border: 1px solid #ee4d2d;
+  border-radius: 2px;
+  padding: 12px 16px;
+  background-color: #ee4d2d;
+  color: white;
+}
+.product-detail-actions-buy-now:hover{
+  background-color: #ee4d2ddc;
+}
 @media (max-width: 899px) {
   .product-detail-layout {
     grid-template-columns: 1fr;

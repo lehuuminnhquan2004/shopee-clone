@@ -173,7 +173,6 @@ export async function getProductById(
                         name: true,
                         optionKey:true,
                         price:true,
-                        imageUrl:true,
                     },
                 }
 
@@ -218,7 +217,6 @@ export async function getProductById(
                 name:model.name,
                 optionKey:model.optionKey,
                 price:model.price.toString(),
-                imageUrl:model.imageUrl??null,
             }))
         })
     } catch (err) {

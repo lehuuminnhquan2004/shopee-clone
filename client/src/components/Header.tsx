@@ -1,7 +1,10 @@
+import './Header.css'
+
 type HeaderProps={
     searchTerm: string;
     onSearchChange:(value:string)=>void;
 }
+
 
 export default function Header({
     searchTerm,
