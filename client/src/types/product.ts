@@ -12,6 +12,23 @@ type ImageProductDetailData={
   position:number;
   url:string;
 }
+type OptionProductDetailData={
+  id:string;
+  value:string;
+  imageUrl:string|null;
+}
+type TierProductDetailData={
+  id:string;
+  name:string;
+  options:OptionProductDetailData[];
+}
+export type ModelProductDetailData={
+  id:string;
+  name:string;
+  price:string;
+  optionKey:string;
+  imageUrl:string|null;
+}
 export type ProductDetailData={
   id:string;
   name:string;
@@ -23,4 +40,6 @@ export type ProductDetailData={
   soldCount:number;
   images:ImageProductDetailData[];
   shop:ShopProductDetailData;
+  tiers:TierProductDetailData[];
+  models:ModelProductDetailData[];
 }

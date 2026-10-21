@@ -11,6 +11,7 @@
   min-width: 0;
 }
 
+/* Anh san pham */
 .product-detail-main-image {
   display: block;
   width: 100%;
@@ -48,6 +49,54 @@
   height: 100%;
   object-fit: cover;
 }
+/* Bien the san pham */
+.product-detail-variants{
+  display: grid;
+  gap: 20px;
+  margin-top: 28px;
+}
+.product-detail-variant-row{
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 110px minmax(0,1fr);
+  align-items: start;
+}
+.product-detail-variant-label{
+  padding-top: 10px;
+  color: #757575;
+}
+.product-detail-variant-options{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.product-detail-variant-option{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 80px;
+  min-height: 40px;
+  padding: 5px 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 2px;
+  background-color:while;
+  color:#222;
+  font: inherit;
+  cursor: pointer;
+}
+.product-detail-variant-option img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+}
+
+.product-detail-variant-option:hover,
+.product-detail-variant-option.is-active{
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+}
+
 
 @media (max-width: 899px) {
   .product-detail-layout {

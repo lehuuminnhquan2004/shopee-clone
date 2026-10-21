@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router'
-import type { ProductDetailData } from '../types/product';
+import type { ModelProductDetailData, ProductDetailData } from '../types/product';
 import { useEffect, useState } from 'react';
 import './ProductDetailPage.css'
 
@@ -9,6 +9,8 @@ export default function ProductDetailPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
+    const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
+   
 
     useEffect(() => {
         let ignore = false
@@ -39,6 +41,11 @@ export default function ProductDetailPage() {
 
     }, [productId])
 
+    const selectedOptionsId=product?.tiers.map((tier)=>selectedOptions[tier.id])??[];
+    const selectedModel=
+    product && selectedOptionsId.every((id)=>id!==undefined)
+    ?product.models.find((item)=>item.optionKey===selectedOptionsId.join('-'))
+    :undefined
 
     const activeImage = product?.images.find((image) => image.id === selectedImageId) ?? product?.images[0]
     return (
@@ -70,7 +77,7 @@ export default function ProductDetailPage() {
                                             aria-label={`Xem ảnh ${index + 1}`}
                                             aria-pressed={activeImage?.id === image.id}
                                         >
-                                            <img src={image.url} />
+                                            <img src={image.url} alt=""/>
                                         </button>
                                     ))}
                                 </div>
@@ -84,9 +91,42 @@ export default function ProductDetailPage() {
                                 Đã bán {product.soldCount}
                             </p>
                             <p className="product-detail-price">
-                                {BigInt(product.minPrice).toLocaleString('vi-VN')}₫
+                                {BigInt(selectedModel?selectedModel.price:product.minPrice).toLocaleString('vi-VN')}₫
                             </p>
+
+                            {product.tiers.length > 0 && (
+                                <div className='product-detail-variants'>
+                                    {product.tiers.map((tier) => (
+                                        <div key={tier.id} className='product-detail-variant-row'>
+                                            <span className='product-detail-variant-label'>{tier.name}</span>
+                                            <div className='product-detail-variant-options'>
+                                                {tier.options.map((option) => {
+                                                    const isSelected = option.id === selectedOptions[tier.id];
+                                                    return (
+                                                        <button
+                                                            key={option.id}
+                                                            type='button'
+                                                            className={`product-detail-variant-option ${isSelected ? 'is-active' : ''}`}
+                                                            aria-pressed={isSelected}
+                                                            onClick={() => setSelectedOptions((previous) => ({
+                                                                ...previous,
+                                                                [tier.id]: option.id,
+                                                            }))}
+                                                        >
+                                                            {option.imageUrl && <img src={option.imageUrl} alt="" />}
+                                                            <span>{option.value}</span>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div ></div>
                         </div>
+
+
                     </div>
                 )}
             </div>

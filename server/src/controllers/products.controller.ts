@@ -11,7 +11,8 @@ export async function getProducts(
                 status: 'active',
             },
             orderBy: [
-                { createdAt: 'desc', }
+                { createdAt: 'desc'},
+                {id:'asc'},
             ],
             select: {
                 id: true,
@@ -164,6 +165,17 @@ export async function getProductById(
                         },
                     },
                 },
+                models:{
+                    where:{status:'active'},
+                    orderBy: { id: 'asc' },
+                    select: {
+                        id: true,
+                        name: true,
+                        optionKey:true,
+                        price:true,
+                        imageUrl:true,
+                    },
+                }
 
             },
         })
@@ -200,6 +212,13 @@ export async function getProductById(
                     value:option.value,
                     imageUrl:option.imageUrl??null,
                 }))
+            })),
+            models:product.models.map((model)=>({
+                id:model.id.toString(),
+                name:model.name,
+                optionKey:model.optionKey,
+                price:model.price.toString(),
+                imageUrl:model.imageUrl??null,
             }))
         })
     } catch (err) {
