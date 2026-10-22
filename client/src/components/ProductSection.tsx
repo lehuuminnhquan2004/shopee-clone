@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ProductCardData } from '../types/product'
+import { getProducts, getCategoryProducts } from '../api/productsApi'
+import { getApiErrorMessage } from '../lib/api'
 import ProductCard from './ProductCard'
 import './ProductSection.css'
 
@@ -30,20 +32,16 @@ export default function ProductSection({
       setError(null)
 
       try {
-        const path=categoryId?`/api/products/${categoryId}/products`:`/api/products`;
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${path}`)
-        if (!response.ok) {
-          throw new Error(`Không lấy được sản phẩm (status=${response.status})`)
-        }
-
-        const data: ProductCardData[] = await response.json()
+        const data = categoryId
+          ? await getCategoryProducts(categoryId)
+          : await getProducts()
         if (!ignore) {
           setProducts(data)
         }
       } catch (err) {
         if (!ignore) {
           console.error(err)
-          setError(err instanceof Error ? err.message : 'Lỗi không xác định')
+          setError(getApiErrorMessage(err, 'Không lấy được sản phẩm'))
         }
       } finally {
         if (!ignore) {

@@ -1,5 +1,7 @@
 import { Link, useParams } from 'react-router'
 import type { ProductDetailData } from '../types/product';
+import { getProductById } from '../api/productsApi';
+import { getApiErrorMessage } from '../lib/api';
 import { useEffect, useState } from 'react';
 import './ProductDetailPage.css'
 
@@ -15,21 +17,18 @@ export default function ProductDetailPage() {
     useEffect(() => {
         let ignore = false
         if (!productId) return
+        const id = productId
 
         async function loadProductDetail() {
             setLoading(true)
             setError(null)
             setProduct(null)
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}`)
-                if (!response.ok) {
-                    throw new Error('Không lấy được data sản phẩm')
-                }
-                const data: ProductDetailData = await response.json()
+                const data = await getProductById(id)
                 if (!ignore) setProduct(data)
             } catch (err) {
                 if (!ignore) {
-                    setError(err instanceof Error ? err.message : "Lỗi không xác định")
+                    setError(getApiErrorMessage(err, 'Không lấy được thông tin sản phẩm'))
                 }
             } finally {
                 if (!ignore) setLoading(false)
@@ -119,7 +118,7 @@ export default function ProductDetailPage() {
                                                                     ...previous,
                                                                     [tier.id]: option.id,
                                                                 }))
-                                                                setSelectedImageId(null);
+                                                                if(tier.id===firstTier?.id)setSelectedImageId(null);
                                                             }}
                                                         >
                                                             {option.imageUrl && <img src={option.imageUrl} alt="" />}

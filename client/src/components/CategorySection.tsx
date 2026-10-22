@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CategoryCardData } from '../types/category'
+import { getCategories } from '../api/categoriesApi'
+import { getApiErrorMessage } from '../lib/api'
 import CategoryCard from './CategoryCard'
 import './CategorySection.css'
 
@@ -17,19 +19,14 @@ export default function CategorySection() {
       setError(null)
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories`)
-        if (!response.ok) {
-          throw new Error(`Không lấy được danh mục (status=${response.status})`)
-        }
-
-        const data: CategoryCardData[] = await response.json()
+        const data = await getCategories()
         if (!ignore) {
           setCategories(data)
         }
       } catch (err) {
         if (!ignore) {
           console.error(err)
-          setError(err instanceof Error ? err.message : 'Lỗi không xác định')
+          setError(getApiErrorMessage(err, 'Không lấy được danh mục'))
         }
       } finally {
         if (!ignore) {

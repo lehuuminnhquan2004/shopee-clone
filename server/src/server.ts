@@ -3,6 +3,7 @@ import cors from 'cors'
 import {prisma} from './lib/prisma.js'
 import { categoriesRouter } from './routes/categories.route.js';
 import {productsRouter} from './routes/products.route.js'
+import { authRouter } from './routes/auth.route.js';
 
 const app=express();
 const PORT=3000;
@@ -10,11 +11,14 @@ const PORT=3000;
 app.use(
     cors({
         origin: 'http://localhost:5173',
+        credentials: true,
     }),
 );
+app.use(express.json());
 
 app.use('/api/categories',categoriesRouter);
 app.use('/api/products',productsRouter);
+app.use('/api/auth',authRouter);
 
 app.get('/health/db',async (_req,res)=>{
   try{

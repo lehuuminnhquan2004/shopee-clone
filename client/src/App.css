@@ -5,30 +5,6 @@
   padding-inline: 16px;
 }
 
-.site-header {
-  background: #d84315;
-  color: white;
-  padding-block: 20px;
-}
-
-.header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.site-name {
-  margin: 0;
-  font-size: 24px;
-}
-
-.search-input {
-  width: 100%;
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
 
 .page-content {
   padding-block: 24px;
@@ -38,18 +14,4 @@
   margin-top: 32px;
 }
 
-@media (min-width: 960px) {
-  .header-content {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .site-name {
-    flex-shrink: 0;
-  }
-
-  .search-input {
-    flex: 1;
-  }
-}
 

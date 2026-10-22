@@ -1,6 +1,8 @@
 import { useParams } from 'react-router';
 import { useState, useEffect } from 'react';
 import type { CategoryChild } from '../types/category';
+import { getCategoryById, getCategoryChildren } from '../api/categoriesApi';
+import { getApiErrorMessage } from '../lib/api';
 import ProductSection from '../components/ProductSection';
 
 
@@ -14,6 +16,7 @@ export default function CategoryPage() {
   useEffect(()=>{
     let ignore=false;
     if(!categoryId)return;
+    const id = categoryId;
 
     setLoading(true);
     setError(null);
@@ -22,16 +25,9 @@ export default function CategoryPage() {
 
     async function loadCategory() {
         try{
-            const [parentReponse,childrenReponse]=await Promise.all([
-                fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}`),
-                fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories/${categoryId}/children`)
-            ])
-            if(!parentReponse.ok||!childrenReponse.ok){
-                throw new Error('Không lấy được data danh mục');
-            }
-            const [parentData, childrenData]:[CategoryChild,CategoryChild[]]=await Promise.all([
-                parentReponse.json(),
-                childrenReponse.json()
+            const [parentData, childrenData]=await Promise.all([
+                getCategoryById(id),
+                getCategoryChildren(id)
             ])
             if(!ignore){
                 setParent(parentData)
@@ -39,7 +35,7 @@ export default function CategoryPage() {
             }
         }catch(error){
             if(!ignore){
-                setError(error instanceof Error?error.message:"Có lỗi sảy ra");
+                setError(getApiErrorMessage(error, 'Không lấy được danh mục'));
             }
         }finally{
             if(!ignore) setLoading(false);
