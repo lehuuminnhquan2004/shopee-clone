@@ -60,7 +60,7 @@ model User {
 model PendingRegistration {
   id             String   @id @default(uuid()) @db.Uuid
   email          String   @unique @db.VarChar(255)
-  username       String   @unique @db.VarChar(50)
+  username       String   @db.VarChar(50)
   passwordHash   String   @map("password_hash") @db.VarChar(255)
   otpHash        String   @map("otp_hash") @db.VarChar(64)
   expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)

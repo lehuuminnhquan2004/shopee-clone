@@ -17,8 +17,6 @@ CREATE TABLE "pending_registrations" (
 -- CreateIndex
 CREATE UNIQUE INDEX "pending_registrations_email_key" ON "pending_registrations"("email");
 
--- CreateIndex
-CREATE UNIQUE INDEX "pending_registrations_username_key" ON "pending_registrations"("username");
 
 -- CreateIndex
 CREATE INDEX "pending_registrations_expires_at_idx" ON "pending_registrations"("expires_at");
