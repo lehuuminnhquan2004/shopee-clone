@@ -34,9 +34,13 @@ export async function login(
     res: Response
 ): Promise<void> {
     try {
-        const rawIdentifier = String(req.body?.identifier ?? "");
-        const password = String(req.body?.password ?? "");
-        if (!rawIdentifier || !password) {
+        const rawIdentifier: unknown = req.body?.identifier;
+        const password: unknown = req.body?.password;
+        if (
+            typeof rawIdentifier !== 'string' ||
+            !rawIdentifier.trim() ||
+            typeof password !== 'string' ||
+            password.length === 0) {
             res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' })
             return
         }
@@ -45,18 +49,18 @@ export async function login(
             res.status(400).json({ message: "Thông tin không hợp lệ" })
             return;
         }
-        if (password.length > 128) {
-            res.status(400).json({ message: "Mật khẩu quá dài" });
+        if (Buffer.byteLength(password, 'utf8') > 72) {
+            res.status(400).json({ message: 'Mật khẩu vượt quá 72 byte' });
             return;
         }
         const user =
             identifier.type === "email"
-                ? await prisma.user.findFirst({
+                ? await prisma.user.findUnique({
                     where: {
                         email: identifier.value
                     },
                 })
-                : await prisma.user.findFirst({
+                : await prisma.user.findUnique({
                     where: {
                         phone: identifier.value
                     },
@@ -81,6 +85,10 @@ export async function login(
             res.status(403).json({ message: "Tài khoản đã xóa" });
             return;
         }
+        if (user.deletedAt !== null) {
+            res.status(403).json({ message: "Tài khoản đã xóa" });
+            return;
+        }
 
         const accessSecret = process.env.JWT_ACCESS_SECRET;
         const refreshSecret = process.env.JWT_REFRESH_SECRET;
@@ -90,7 +98,7 @@ export async function login(
         const accessToken = jwt.sign(
             { userId: user.id.toString(), role: user.role },
             accessSecret,
-            { expiresIn: ACCESS_TOKEN_TTL,}
+            { expiresIn: ACCESS_TOKEN_TTL, }
         );
         const refreshToken = jwt.sign(
             { userId: user.id.toString() },
@@ -108,14 +116,26 @@ export async function login(
             accessToken,
             user: {
                 id: user.id.toString(),
-                email: user.email,
-                phone: user.phone,
+                email: user.email??null,
+                phone: user.phone??null,
                 username: user.username,
-                role: user.role,
+                role: user.role??"buyer",
             },
         });
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau" });
     }
+}
+export function logout(
+    _req: Request,
+    res: Response
+): void {
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path:'/',
+    });
+    res.status(204).end();
 }

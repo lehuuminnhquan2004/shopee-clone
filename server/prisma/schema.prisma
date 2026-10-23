@@ -57,6 +57,22 @@ model User {
   @@map("users")
 }
 
+model PendingRegistration {
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique @db.VarChar(255)
+  username       String   @unique @db.VarChar(50)
+  passwordHash   String   @map("password_hash") @db.VarChar(255)
+  otpHash        String   @map("otp_hash") @db.VarChar(64)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+  failedAttempts Int      @default(0) @map("failed_attempts")
+  lastSentAt     DateTime @map("last_sent_at") @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("pending_registrations")
+}
+
 model Category {
   id       BigInt  @id @default(autoincrement())
   parentId BigInt? @map("parent_id")
@@ -155,8 +171,8 @@ model Product {
   shop     Shop           @relation(fields: [shopId], references: [id], onDelete: Restrict)
   category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   images   ProductImage[]
-  tiers ProductTier[]
-  models ProductModel[]
+  tiers    ProductTier[]
+  models   ProductModel[]
 
   @@index([shopId, status], map: "idx_products_shop")
   @@index([categoryId, status], map: "idx_products_category")
@@ -176,18 +192,20 @@ model ProductImage {
   @@index([productId, position], map: "idx_pimg_product")
   @@map("product_images")
 }
+
 model ProductTier {
   id        BigInt @id @default(autoincrement())
   productId BigInt @map("product_id")
   name      String @db.VarChar(30)
   position  Int    @db.SmallInt
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   options TierOption[]
 
   @@unique([productId, position], map: "uq_tier_product_pos")
   @@map("product_tiers")
 }
+
 model TierOption {
   id       BigInt  @id @default(autoincrement())
   tierId   BigInt  @map("tier_id")
@@ -195,7 +213,7 @@ model TierOption {
   imageUrl String? @map("image_url") @db.VarChar(500)
   position Int     @default(0) @db.SmallInt
 
-  tier ProductTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  tier             ProductTier       @relation(fields: [tierId], references: [id], onDelete: Cascade)
   modelTierOptions ModelTierOption[]
 
   @@unique([tierId, value], map: "uq_tieropt_value")
@@ -220,9 +238,9 @@ model ProductModel {
   createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   tierOptions ModelTierOption[]
-  inventory Inventory?
+  inventory   Inventory?
 
   @@unique([productId, optionKey], map: "uq_models_combo")
   @@unique([productId, sku], map: "uq_models_sku")
@@ -240,6 +258,7 @@ model ModelTierOption {
   @@index([tierOptionId], map: "idx_mto_option")
   @@map("model_tier_options")
 }
+
 model Inventory {
   modelId       BigInt   @id @map("model_id")
   stock         Int      @default(0)
