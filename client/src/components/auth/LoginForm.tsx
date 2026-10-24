@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { login } from "../api/authApi";
-import type { LoginResponse } from "../types/auth";
-import { getApiErrorMessage } from "../lib/api";
-import './LoginPage.css'
+import { login } from "../../api/authApi";
+import type { LoginResponse } from "../../types/auth";
+import { getApiErrorMessage } from "../../lib/api";
+import './LoginForm.css'
 
 
-export function LoginPage() {
+export function LoginForm() {
     const [identifier, setIdentifier] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [result, setResult] = useState<LoginResponse | null>(null);
@@ -31,23 +31,7 @@ export function LoginPage() {
     }
    
     return (
-        <div className="login-page">
-            <div className="login-layout">
-                <div className="login-brand">
-                    
-
-                    <p className="login-brand-name">MiQ</p>
-                    <p className="login-brand-description">
-                        Nền tảng thương mại điện tử
-                        <br />
-                        yêu thích ở Đông Nam Á &amp; Đài Loan
-                    </p>
-                </div>
-
-                <section className="login-card">
-                    <h1 className="login-title">Đăng nhập</h1>
-
-                    {result ? (
+                    result ? (
                         <p className="login-success" role="status">
                             Đăng nhập thành công, {result.user.username}!
                         </p>
@@ -113,10 +97,7 @@ export function LoginPage() {
                                 {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                             </button>
                         </form>
-                    )}
-                </section>
-            </div>
-        </div>
+                    )
     );
 
 

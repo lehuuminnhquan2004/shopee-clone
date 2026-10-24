@@ -16,12 +16,12 @@ export const loginLimiter = rateLimit({
   message: { message: "Bạn gửi quá nhiều yêu cầu, vui lòng thử lại sau 15 phút" },
 });
 export const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 10 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    message: "Bạn đăng ký quá nhiều lần, vui lòng thử lại sau 15 phút",
+    message: "Bạn đăng ký quá nhiều lần, vui lòng thử lại sau 10 phút",
   },
 });
 export const verifyRegistrationLimiter = rateLimit({
