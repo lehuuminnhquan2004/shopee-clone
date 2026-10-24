@@ -54,6 +54,18 @@
   font-size: 24px;
   font-weight: 400;
 }
+.auth-switch{
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.auth-switch p{
+  color: darkgray;
+}
+.auth-switch__button{
+  color: #ee4d2d;
+  cursor: pointer;
+}
 
 
 @media (max-width: 800px) {

@@ -5,11 +5,15 @@ import { getApiErrorMessage } from "../../lib/api";
 import './LoginForm.css'
 
 
-export function LoginForm() {
+type LoginFormProps = {
+    loading: boolean;
+    onLoadingChange: (loading: boolean) => void;
+};
+
+export function LoginForm({ loading, onLoadingChange: setLoading }: LoginFormProps) {
     const [identifier, setIdentifier] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [result, setResult] = useState<LoginResponse | null>(null);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     async function handleLogin() {

@@ -39,7 +39,8 @@ model User {
   username        String     @unique @db.VarChar(50)
   email           String?    @unique @db.VarChar(255)
   phone           String?    @unique @db.VarChar(20)
-  passwordHash    String     @map("password_hash") @db.VarChar(255)
+  passwordHash    String?    @map("password_hash") @db.VarChar(255)
+  googleSub       String?    @unique @map("google_sub") @db.VarChar(255)
   fullName        String?    @map("full_name") @db.VarChar(100)
   avatarUrl       String?    @map("avatar_url") @db.VarChar(500)
   gender          Gender?

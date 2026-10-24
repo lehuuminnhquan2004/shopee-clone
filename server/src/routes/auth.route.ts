@@ -5,6 +5,7 @@ import {
     register,
     verifyRegistration,
     resendRegistrationOtp,
+    googleLogin,
 } from '../controllers/auth.controller.js'
 import {
     loginLimiter,
@@ -20,3 +21,4 @@ authRouter.post('/logout', logout)
 authRouter.post("/register", registerLimiter, register);
 authRouter.post("/register/verify", verifyRegistrationLimiter, verifyRegistration,);
 authRouter.post("/register/resend", resendRegistrationLimiter, resendRegistrationOtp,);
+authRouter.post("/google", loginLimiter, googleLogin);

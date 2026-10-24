@@ -13,6 +13,7 @@ import {
     OTP_MAX_ATTEMPTS,
     verifyOtp,
 } from "../lib/otp.js";
+import { verifyGoogleIdToken } from "../lib/google.js";
 
 const ACCESS_TOKEN_TTL = "15m"
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -77,9 +78,12 @@ export async function login(
                     },
                 });
 
-        if (!user) {
-            res.status(401).json({ message: "Sai tài khoản hoặc mật khẩu" })
-            return
+        // Tài khoản đăng nhập bằng Google có thể chưa thiết lập mật khẩu.
+        if (!user || user.passwordHash === null) {
+            res.status(401).json({
+                message: "Sai tài khoản hoặc mật khẩu",
+            });
+            return;
         }
         const isMatch = await bcrypt.compare(
             password, user.passwordHash
@@ -262,6 +266,7 @@ export async function register(
                 });
                 return;
             }
+            //Cập nhập yêu cầu đăng ký có sẵn
             const updated = await prisma.pendingRegistration.updateMany({
                 where: {
                     id: currentPending.id,
@@ -648,6 +653,184 @@ export async function resendRegistrationOtp(
 
         res.status(500).json({
             message: "Không thể gửi lại OTP lúc này",
+        });
+    }
+}
+export async function googleLogin(
+    req: Request,
+    res: Response
+): Promise<void> {
+    try {
+        const clientOrigin = process.env.CLIENT_ORIGIN;
+        const googleClientId = process.env.GOOGLE_CLIENT_ID;
+        const accessSecret = process.env.JWT_ACCESS_SECRET;
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+        if (
+            !clientOrigin ||
+            !googleClientId ||
+            !accessSecret ||
+            !refreshSecret
+        ) {
+            throw new Error("Thiếu cấu hình đăng nhập Google");
+        }
+        if (req.get("origin") !== clientOrigin) {
+            res.status(403).json({ message: "Nguồn yêu cầu không hợp lệ" })
+            return
+        }
+        if (!req.is("application/json")) {
+            console.error({ message: "Yêu cầu phải sử dụng application/json" })
+            res.status(415).json({ message: "Thông tin yêu cầu sai" })
+            return
+        }
+        const credential: unknown = req.body?.credential;
+
+        if (!credential || typeof (credential) !== "string" || !credential.trim() || credential.length > 10000) {
+            res.status(400).json({ message: "Google credential không hợp lệ" })
+            return
+        }
+        let payload: Awaited<ReturnType<typeof verifyGoogleIdToken>>;
+
+        try {
+            payload = await verifyGoogleIdToken(credential)
+        } catch {
+            res.status(401).json({ message: "Xác thực thất bại" })
+            return
+        }
+        //Kiểm tra đã có tài khoản GG sub chưa
+        let user = await prisma.user.findUnique({
+            where: {
+                googleSub: payload.sub,
+            }
+        })
+        //Chưa có tài khoản nào tạo bằng GG này
+        if (!user) {
+            const email = payload.email?.trim().toLowerCase();
+
+            if (
+                !email ||
+                email.length > 255 ||
+                !EMAIL_REGEX.test(email) ||
+                payload.email_verified !== true
+            ) {
+                res.status(400).json({
+                    message: "Email Google không hợp lệ hoặc chưa được xác minh",
+                });
+                return;
+            }
+
+            if (!email.endsWith("@gmail.com") && !payload.hd) {
+                res.status(403).json({
+                    message: "Vui lòng đăng ký bằng email và xác thực OTP",
+                });
+                return;
+            }
+            user = await prisma.user.findUnique({
+                where: {
+                    email,
+                }
+            })
+            //Chưa có tài khoản nào cùng gmail với gg này
+            if (!user) {
+                const username = `user_${randomUUID().replaceAll("-", "")}`;
+                user = await prisma.$transaction(async (tx) => {
+                    const createdUser = await tx.user.create({
+                        data: {
+                            username,
+                            email,
+                            googleSub: payload.sub,
+                            passwordHash: null,
+                            fullName: payload.name
+                                ? Array.from(payload.name).slice(0, 100).join("")
+                                : null,
+                            avatarUrl:
+                                payload.picture &&
+                                    payload.picture.length <= 500
+                                    ? payload.picture
+                                    : null,
+                            emailVerifiedAt: new Date(),
+                            role: "buyer",
+                            status: "active",
+                        }
+                    })
+
+                    //Xoa cac yeu cau cũ cua gmail tài khoản GG này
+                    await tx.pendingRegistration.deleteMany({
+                        where: { email: payload.email },
+                    });
+                    return createdUser;
+                })
+            } else {
+                //Co tai khoan trung voi gmail nay
+                const existingUser = await prisma.user.findUnique({
+                    where: { email },
+                    select: { id: true },
+                });
+
+                if (existingUser) {
+                    res.status(409).json({
+                        message:
+                            "Email đã được sử dụng. Vui lòng đăng nhập bằng phương thức hiện có",
+                    });
+                    return;
+                }
+            }
+        }
+        if (user.status == "locked") {
+            res.status(403).json({
+                message: "Tài khoản đã bị khóa",
+            });
+            return;
+        }
+        const accessToken = jwt.sign(
+            {
+                userId: user.id.toString(),
+                role: user.role,
+            },
+            accessSecret,
+            { expiresIn: ACCESS_TOKEN_TTL }
+        )
+        const refreshToken = jwt.sign(
+            { userId: user.id.toString() },
+            refreshSecret,
+            { expiresIn: "7d" },
+        )
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/",
+            maxAge: REFRESH_TOKEN_TTL_MS,
+        });
+        res.status(200).json({
+            message: "Đăng nhập thành công",
+            accessToken,
+            user: {
+                id: user.id.toString(),
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        // Hai request đồng thời có thể cùng thấy tài khoản chưa tồn tại.
+        // Unique constraint trong database sẽ ngăn tạo trùng.
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+        ) {
+            res.status(409).json({
+                message:
+                    "Thông tin tài khoản vừa được cập nhật. Vui lòng thử đăng nhập lại",
+            });
+            return;
+        }
+
+        console.error("Google login error:", error);
+
+        res.status(500).json({
+            message: "Lỗi server, vui lòng thử lại sau",
         });
     }
 }

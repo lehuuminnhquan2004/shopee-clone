@@ -5,6 +5,7 @@ import { RegisterForm } from '../components/auth/RegisterForm';
 
 export function AuthPage() {
     const [mode, setMode] = useState<"login" | "register">("login")
+    const [loading, setLoading] = useState(false);
 
     return (
         <div className="login-page">
@@ -20,14 +21,22 @@ export function AuthPage() {
                     </p>
                 </div>
                 <section className="auth-card">
-                    <h1 className="login-title">Đăng nhập</h1>
-                    {mode === "login" ? <LoginForm /> : <RegisterForm />}
+                    <h1 className="login-title">{mode==="login"?"Đăng nhập":"Đăng ký"}</h1>
+                    {mode === "login" ? (
+                        <LoginForm loading={loading} onLoadingChange={setLoading} />
+                    ) : (
+                        <RegisterForm loading={loading} onLoadingChange={setLoading} />
+                    )}
                     <div className='auth-switch'>
                         <p className="auth-switch__text">{mode==="login"?"Bạn chưa có tài khoản?":"Bạn đã có tài khoản?"}</p>
                         <button
                             type='button'
                             className='auth-switch__button'
-                            onClick={() => setMode(mode === "login" ? "register" : "login")}
+                            disabled={loading}
+                            onClick={() => {
+                                if (loading) return;
+                                setMode((previous) => previous === "login" ? "register" : "login");
+                            }}
                         >{mode === "login" ? "Đăng ký" : "Đăng nhập"}</button>
                     </div>
                 </section>
