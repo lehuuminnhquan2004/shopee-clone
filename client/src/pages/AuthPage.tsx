@@ -2,6 +2,7 @@ import './AuthPage.css'
 import { LoginForm } from "../components/auth/LoginForm";
 import { useState } from 'react';
 import { RegisterForm } from '../components/auth/RegisterForm';
+import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 
 export function AuthPage() {
     const [mode, setMode] = useState<"login" | "register">("login")
@@ -27,6 +28,10 @@ export function AuthPage() {
                     ) : (
                         <RegisterForm loading={loading} onLoadingChange={setLoading} />
                     )}
+                    <GoogleLoginButton
+                        loading={loading}
+                        onLoadingChange={setLoading}
+                    />
                     <div className='auth-switch'>
                         <p className="auth-switch__text">{mode==="login"?"Bạn chưa có tài khoản?":"Bạn đã có tài khoản?"}</p>
                         <button

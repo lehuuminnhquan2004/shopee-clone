@@ -1,39 +1,78 @@
-import { useState } from "react";
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
+import { useRef, useState } from "react";
+import {
+    GoogleLogin,
+    type CredentialResponse,
+} from "@react-oauth/google";
 import { loginWithGoogle } from "../../api/authApi";
-import { getApiErrorMessage } from '../../lib/api';
-import { useAuth } from "../../auth/AuthContext";
+import { getApiErrorMessage } from "../../lib/api";
+import type { LoginResponse } from "../../types/auth";
 
-export default function GoogleLoginButton() {
-  const { setUser } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+type GoogleLoginButtonProps = {
+    loading: boolean;
+    onLoadingChange: (loading: boolean) => void;
+};
 
-  async function handleSuccess(response: CredentialResponse) {
-    if (!response.credential || loading) return;
+export default function GoogleLoginButton({
+    loading,
+    onLoadingChange,
+}: GoogleLoginButtonProps) {
+    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<LoginResponse | null>(null);
 
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await loginWithGoogle(response.credential);
-      setUser(data.user);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Đăng nhập Google thất bại"));
-    } finally {
-      setLoading(false);
+    // Chặn callback gửi trùng request trước khi React cập nhật giao diện.
+    const submittingRef = useRef(false);
+
+    async function handleSuccess(response: CredentialResponse) {
+        if (loading || submittingRef.current) return;
+
+        if (!response.credential) {
+            setError("Google chưa trả về thông tin xác thực");
+            return;
+        }
+
+        submittingRef.current = true;
+        onLoadingChange(true);
+        setError(null);
+
+        try {
+            // Chỉ báo thành công sau khi API của mình xác minh xong.
+            const data = await loginWithGoogle(response.credential);
+            setResult(data);
+        } catch (err) {
+            setError(
+                getApiErrorMessage(err, "Đăng nhập Google thất bại"),
+            );
+        } finally {
+            submittingRef.current = false;
+            onLoadingChange(false);
+        }
     }
-  }
 
-  return (
-    <div>
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={() => setError("Không thể đăng nhập bằng Google")}
-        text="continue_with"
-        locale="vi"
-      />
-      {loading && <p role="status">Đang đăng nhập...</p>}
-      {error && <p role="alert">{error}</p>}
-    </div>
-  );
+    if (result) {
+        return (
+            <p role="status">
+                Đăng nhập Google thành công, {result.user.username}!
+            </p>
+        );
+    }
+
+    return (
+        <div className="google-login">
+            {loading ? (
+                <p role="status">Đang xử lý...</p>
+            ) : (
+                <GoogleLogin
+                    onSuccess={(response) => {
+                        void handleSuccess(response);
+                    }}
+                    onError={() => {
+                        setError("Không thể đăng nhập bằng Google");
+                    }}
+                    text="continue_with"
+                />
+            )}
+
+            {error && <p role="alert">{error}</p>}
+        </div>
+    );
 }

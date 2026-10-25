@@ -756,29 +756,22 @@ export async function googleLogin(
 
                     //Xoa cac yeu cau cũ cua gmail tài khoản GG này
                     await tx.pendingRegistration.deleteMany({
-                        where: { email: payload.email },
+                        where: { email },
                     });
                     return createdUser;
                 })
             } else {
                 //Co tai khoan trung voi gmail nay
-                const existingUser = await prisma.user.findUnique({
-                    where: { email },
-                    select: { id: true },
+                res.status(409).json({
+                    message:
+                        "Email đã được sử dụng. Vui lòng đăng nhập bằng phương thức hiện có",
                 });
-
-                if (existingUser) {
-                    res.status(409).json({
-                        message:
-                            "Email đã được sử dụng. Vui lòng đăng nhập bằng phương thức hiện có",
-                    });
-                    return;
-                }
+                return;
             }
         }
-        if (user.status == "locked") {
+        if (user.status !== "active" || user.deletedAt !== null) {
             res.status(403).json({
-                message: "Tài khoản đã bị khóa",
+                message: "Tài khoản đã bị khóa hoặc đã xóa",
             });
             return;
         }
