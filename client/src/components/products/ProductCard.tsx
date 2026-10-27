@@ -1,4 +1,4 @@
-import type { ProductCardData } from "../types/product"
+import type { ProductCardData } from "../../types/product"
 import { Link } from "react-router";
 import './ProductCard.css'
 

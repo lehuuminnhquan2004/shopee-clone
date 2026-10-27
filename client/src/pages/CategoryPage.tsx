@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import type { CategoryChild } from '../types/category';
 import { getCategoryById, getCategoryChildren } from '../api/categoriesApi';
 import { getApiErrorMessage } from '../lib/api';
-import ProductSection from '../components/ProductSection';
+import ProductSection from '../components/products/ProductSection';
 
 
 export default function CategoryPage() {

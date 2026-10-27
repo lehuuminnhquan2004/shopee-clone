@@ -1,7 +1,9 @@
 .site-header {
-  background: #ff6030;
-  color: white;
-  padding-block: 20px;
+  background: linear-gradient(180deg, #0b5ed7, #3b9cff);
+  color: #fff;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 20px;
 }
 
 .header-content {
@@ -24,6 +26,18 @@
   color: black;
   border-radius: 6px;
 }
+
+.container-navbar {
+  display: flex;
+  margin-bottom: 12px;
+
+}
+
+.header-account {
+  margin-left: auto;
+  margin-right: 0px;
+}
+
 @media (min-width: 960px) {
   .header-content {
     flex-direction: row;
@@ -38,8 +52,9 @@
     flex: 1;
   }
 }
-@media (max-width: 960px){
-    .site-name {
+
+@media (max-width: 960px) {
+  .site-name {
     display: none;
   }
 }

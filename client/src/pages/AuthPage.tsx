@@ -22,18 +22,20 @@ export function AuthPage() {
                     </p>
                 </div>
                 <section className="auth-card">
-                    <h1 className="login-title">{mode==="login"?"Đăng nhập":"Đăng ký"}</h1>
+                    <h1 className="login-title">{mode === "login" ? "Đăng nhập" : "Đăng ký"}</h1>
                     {mode === "login" ? (
                         <LoginForm loading={loading} onLoadingChange={setLoading} />
                     ) : (
                         <RegisterForm loading={loading} onLoadingChange={setLoading} />
                     )}
-                    <GoogleLoginButton
-                        loading={loading}
-                        onLoadingChange={setLoading}
-                    />
+                    <div className='social-login'>
+                        <GoogleLoginButton
+                            loading={loading}
+                            onLoadingChange={setLoading}
+                        />
+                    </div>
                     <div className='auth-switch'>
-                        <p className="auth-switch__text">{mode==="login"?"Bạn chưa có tài khoản?":"Bạn đã có tài khoản?"}</p>
+                        <p className="auth-switch__text">{mode === "login" ? "Bạn chưa có tài khoản?" : "Bạn đã có tài khoản?"}</p>
                         <button
                             type='button'
                             className='auth-switch__button'

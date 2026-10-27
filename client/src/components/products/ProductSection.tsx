@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { ProductCardData } from '../types/product'
-import { getProducts, getCategoryProducts } from '../api/productsApi'
-import { getApiErrorMessage } from '../lib/api'
+import type { ProductCardData } from '../../types/product'
+import { getProducts, getCategoryProducts } from '../../api/productsApi'
+import { getApiErrorMessage } from '../../lib/api'
 import ProductCard from './ProductCard'
 import './ProductSection.css'
 

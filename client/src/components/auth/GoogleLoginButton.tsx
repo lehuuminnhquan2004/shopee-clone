@@ -6,6 +6,8 @@ import {
 import { loginWithGoogle } from "../../api/authApi";
 import { getApiErrorMessage } from "../../lib/api";
 import type { LoginResponse } from "../../types/auth";
+import { useNavigate } from "react-router";
+import { useAuth } from "../../auth/AuthContext";
 
 type GoogleLoginButtonProps = {
     loading: boolean;
@@ -17,7 +19,9 @@ export default function GoogleLoginButton({
     onLoadingChange,
 }: GoogleLoginButtonProps) {
     const [error, setError] = useState<string | null>(null);
-    const [result, setResult] = useState<LoginResponse | null>(null);
+    //Luu session dang nhap
+    const {setSession}=useAuth();
+    const navigate=useNavigate();
 
     // Chặn callback gửi trùng request trước khi React cập nhật giao diện.
     const submittingRef = useRef(false);
@@ -37,7 +41,11 @@ export default function GoogleLoginButton({
         try {
             // Chỉ báo thành công sau khi API của mình xác minh xong.
             const data = await loginWithGoogle(response.credential);
-            setResult(data);
+            setSession({
+                user:data.user,
+                accessToken:data.accessToken
+            })
+            navigate('/',{replace:true})
         } catch (err) {
             setError(
                 getApiErrorMessage(err, "Đăng nhập Google thất bại"),
@@ -48,13 +56,6 @@ export default function GoogleLoginButton({
         }
     }
 
-    if (result) {
-        return (
-            <p role="status">
-                Đăng nhập Google thành công, {result.user.username}!
-            </p>
-        );
-    }
 
     return (
         <div className="google-login">
@@ -62,13 +63,13 @@ export default function GoogleLoginButton({
                 <p role="status">Đang xử lý...</p>
             ) : (
                 <GoogleLogin
+                    
                     onSuccess={(response) => {
                         void handleSuccess(response);
                     }}
                     onError={() => {
                         setError("Không thể đăng nhập bằng Google");
                     }}
-                    text="continue_with"
                 />
             )}
 

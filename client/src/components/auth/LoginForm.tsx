@@ -3,7 +3,8 @@ import { login } from "../../api/authApi";
 import type { LoginResponse } from "../../types/auth";
 import { getApiErrorMessage } from "../../lib/api";
 import './LoginForm.css'
-
+import { useNavigate } from "react-router";
+import { useAuth } from "../../auth/AuthContext";
 
 type LoginFormProps = {
     loading: boolean;
@@ -13,8 +14,10 @@ type LoginFormProps = {
 export function LoginForm({ loading, onLoadingChange: setLoading }: LoginFormProps) {
     const [identifier, setIdentifier] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const [result, setResult] = useState<LoginResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
+    //luu session
+    const {setSession}=useAuth();
+    const navigate=useNavigate();
 
     async function handleLogin() {
         if (loading) return
@@ -25,8 +28,12 @@ export function LoginForm({ loading, onLoadingChange: setLoading }: LoginFormPro
                 identifier: identifier.trim(),
                 password: password
             })
-            setResult(data);
+            setSession({
+                user:data.user,
+                accessToken:data.accessToken
+            });
             setPassword('')
+            navigate('/',{replace:true});
         } catch (err) {
             setError(getApiErrorMessage(err, "Đăng nhập thất bại"))
         } finally {
@@ -35,11 +42,6 @@ export function LoginForm({ loading, onLoadingChange: setLoading }: LoginFormPro
     }
    
     return (
-                    result ? (
-                        <p className="login-success" role="status">
-                            Đăng nhập thành công, {result.user.username}!
-                        </p>
-                    ) : (
                         <form
                             className="login-form"
                             onSubmit={(event) => {
@@ -101,7 +103,6 @@ export function LoginForm({ loading, onLoadingChange: setLoading }: LoginFormPro
                                 {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                             </button>
                         </form>
-                    )
     );
 
 

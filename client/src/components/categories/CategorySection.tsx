@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { CategoryCardData } from '../types/category'
-import { getCategories } from '../api/categoriesApi'
-import { getApiErrorMessage } from '../lib/api'
+import type { CategoryCardData } from '../../types/category'
+import { getCategories } from '../../api/categoriesApi'
+import { getApiErrorMessage } from '../../lib/api'
 import CategoryCard from './CategoryCard'
 import './CategorySection.css'
 
