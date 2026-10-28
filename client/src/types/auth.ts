@@ -53,3 +53,7 @@ export type AuthErrorResponse = {
   expiresAt?: string;
   retryAfterSeconds?: number;
 };
+
+export type MeResponse = {
+  user: User;
+};

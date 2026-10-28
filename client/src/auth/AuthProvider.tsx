@@ -1,8 +1,16 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { 
+  useEffect, 
+  useState, 
+  type ReactNode,
+  useCallback
+ } from "react"
 import { AuthContext, type AuthSession } from "./AuthContext"
 import { refreshSession } from "../api/authApi"
 import axios from "axios"
-import { getApiErrorMessage } from "../lib/api"
+import { 
+  getApiErrorMessage,
+  setApiAccessToken,
+ } from "../lib/api"
 
 type AuthProviderProps = {
     children: ReactNode
@@ -10,7 +18,13 @@ type AuthProviderProps = {
 export function AuthProvider({
     children
 }: AuthProviderProps) {
-    const [session, setSession] = useState<AuthSession | null>(null)
+    const [session, setSessionState] = useState<AuthSession | null>(null)
+    const setSession= useCallback((nextSession:AuthSession|null):void=>{
+      setApiAccessToken(nextSession?.accessToken??null);
+      setSessionState(nextSession);
+    },[]);
+    
+    
     // Lúc vừa mở trang, chưa biết người dùng có phiên hợp lệ hay không.
     const [restoring, setRestoring] = useState(true);
     const [restoreError, setRestoreError] = useState<string | null>(null);
@@ -51,7 +65,7 @@ export function AuthProvider({
         return () => {
             controller.abort();
         }
-    }, [retryCount])
+    }, [retryCount,setSession])
 
         function handleRetry() {
         setRestoreError(null);

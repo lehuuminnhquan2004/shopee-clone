@@ -963,3 +963,27 @@ export async function refresh(
         });
     }
 }
+
+export function getMe(
+    req: Request,
+    res: Response,
+): void {
+    const user = req.authUser;
+
+    if (!user) {
+        res.status(401).json({
+            message: "Vui lòng đăng nhập",
+        });
+        return;
+    }
+
+    res.status(200).json({
+        user: {
+            id: user.id.toString(),
+            email: user.email,
+            phone: user.phone,
+            username: user.username,
+            role: user.role,
+        },
+    });
+}
