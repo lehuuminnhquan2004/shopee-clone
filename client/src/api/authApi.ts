@@ -63,3 +63,10 @@ export function getRegistrationSessionFromError(
     expiresAt: data.expiresAt,
   };
 }
+
+export async function refreshSession(
+  signal?:AbortSignal
+):Promise<LoginResponse> {
+  const {data}=await api.post<LoginResponse>("/api/auth/refresh",{},{signal,timeout:10000,},)
+  return data
+}

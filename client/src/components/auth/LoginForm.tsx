@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { login } from "../../api/authApi";
-import type { LoginResponse } from "../../types/auth";
 import { getApiErrorMessage } from "../../lib/api";
 import './LoginForm.css'
 import { useNavigate } from "react-router";

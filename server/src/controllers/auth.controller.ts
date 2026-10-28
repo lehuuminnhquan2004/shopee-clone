@@ -827,3 +827,139 @@ export async function googleLogin(
         });
     }
 }
+
+export async function refresh(
+    req: Request,
+    res: Response,
+): Promise<void> {
+    res.setHeader("Cache-Control", "no-store");
+    try {
+        const clientOrigin = process.env.CLIENT_ORIGIN;
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+        const accessSecret = process.env.JWT_ACCESS_SECRET;
+
+        if (!clientOrigin || !refreshSecret || !accessSecret) {
+            throw new Error("Thiếu cấu hình xác thực");
+        }
+
+        if (req.get("Origin") !== clientOrigin) {
+            res.status(403).json({
+                message: "Nguồn yêu cầu không hợp lệ",
+            });
+            return;
+        }
+
+        const refreshToken: unknown = req.cookies?.refreshToken
+
+        if (
+            typeof refreshToken !== "string" ||
+            !refreshToken ||
+            refreshToken.length > 10000
+        ) {
+            res.status(401).json({
+                message: "Vui lòng đăng nhập",
+            });
+            return;
+        }
+        // Kiểm tra chữ ký và thời hạn bằng khóa dành cho refresh token.
+        const payload = jwt.verify(refreshToken, refreshSecret, { algorithms: ["HS256"] })
+        if (
+            typeof payload === "string" ||
+            typeof payload.exp !== "number"
+        ) {
+            res.status(401).json({
+                message: "Phiên đăng nhập không hợp lệ",
+            });
+            return;
+        }
+        // Payload đã xác minh vẫn cần kiểm tra cấu trúc dữ liệu.
+        const rawUserId: unknown = payload.userId;
+
+        if (
+            typeof rawUserId !== "string" ||
+            !/^[1-9]\d{0,18}$/.test(rawUserId)
+        ) {
+            res.status(401).json({
+                message: "Phiên đăng nhập không hợp lệ",
+            });
+            return;
+        }
+
+        const userId = BigInt(rawUserId);
+
+        // Giới hạn BIGINT có dấu trong PostgreSQL.
+        if (userId > 9223372036854775807n) {
+            res.status(401).json({
+                message: "Phiên đăng nhập không hợp lệ",
+            });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                phone: true,
+                username: true,
+                role: true,
+                status: true,
+                deletedAt: true,
+            },
+        });
+
+        if (!user) {
+            res.status(401).json({
+                message: "Phiên đăng nhập không còn hợp lệ",
+            });
+            return;
+        }
+
+        // Token còn hạn không có nghĩa tài khoản vẫn được phép hoạt động.
+        if (user.status !== "active" || user.deletedAt !== null) {
+            res.status(403).json({
+                message: "Tài khoản đã bị khóa hoặc đã xóa",
+            });
+            return;
+        }
+
+        const accessToken = jwt.sign(
+            {
+                userId: user.id.toString(),
+                role: user.role,
+            },
+            accessSecret,
+            { expiresIn: ACCESS_TOKEN_TTL },
+        );
+
+        res.status(200).json({
+            message: "Khôi phục phiên đăng nhập thành công",
+            accessToken,
+            user: {
+                id: user.id.toString(),
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        // Bao gồm token hết hạn, sai chữ ký hoặc chưa đến thời điểm sử dụng.
+        if (
+            error instanceof jwt.JsonWebTokenError ||
+            error instanceof jwt.NotBeforeError
+        ) {
+            res.status(401).json({
+                message: "Phiên đăng nhập hết hạn hoặc không hợp lệ",
+            });
+            return;
+        }
+
+        // Lỗi database/cấu hình không được coi là token hết hạn.
+        console.error("Refresh error:", error);
+
+        res.status(500).json({
+            message: "Không thể khôi phục phiên. Vui lòng thử lại sau",
+        });
+    }
+}

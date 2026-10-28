@@ -1,19 +1,45 @@
+.container-navbar {
+  display: flex;
+  margin-bottom: 12px;
+
+}
+
+.header-account {
+  margin-left: auto;
+  margin-right: 0px;
+}
 .user-menu {
     position: relative;
     display: inline-block;
     cursor: pointer;
 }
 
+.header-account > a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.header-account > a:hover {
+    color: rgb(255 255 255 / 65%);
+}
+
 .user-menu__trigger {
     display: flex;
     align-items: center;
     gap: 6px;
-    height: 32px;               /* popover sẽ nằm ngay dưới chiều cao này */
+    height: 32px;
+    /* popover sẽ nằm ngay dưới chiều cao này */
 }
+.user-menu__trigger:hover {
+   color: rgb(255 255 255 / 65%);
+}
+
 
 .user-menu__popover {
     position: absolute;
-    top: 100%;                  /* dính sát trigger, không có khoảng hở */
+    top: 100%;
+    /* dính sát trigger, không có khoảng hở */
     right: 0;
     min-width: 180px;
     background: #fff;

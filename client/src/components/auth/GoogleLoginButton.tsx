@@ -5,7 +5,6 @@ import {
 } from "@react-oauth/google";
 import { loginWithGoogle } from "../../api/authApi";
 import { getApiErrorMessage } from "../../lib/api";
-import type { LoginResponse } from "../../types/auth";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../auth/AuthContext";
 

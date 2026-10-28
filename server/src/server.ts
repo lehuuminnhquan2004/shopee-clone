@@ -4,6 +4,7 @@ import {prisma} from './lib/prisma.js'
 import { categoriesRouter } from './routes/categories.route.js';
 import {productsRouter} from './routes/products.route.js'
 import { authRouter } from './routes/auth.route.js';
+import cookieParser from "cookie-parser";
 
 const app=express();
 const PORT=3000;
@@ -15,6 +16,7 @@ app.use(
     }),
 );
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api/categories',categoriesRouter);
 app.use('/api/products',productsRouter);

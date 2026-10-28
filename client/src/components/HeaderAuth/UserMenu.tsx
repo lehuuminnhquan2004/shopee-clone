@@ -63,6 +63,11 @@ export function UserMenu() {
                 ) : (
                     <Link to="/auth">Đăng nhập / Đăng ký</Link>
                 )}
+                {logoutError && (
+                    <p className="user-menu__error" role="alert">
+                        {logoutError}
+                    </p>
+                )}
             </div>
         </nav>
     )
