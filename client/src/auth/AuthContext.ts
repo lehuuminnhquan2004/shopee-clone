@@ -6,7 +6,9 @@ export type AuthSession=Pick<LoginResponse,"user"|"accessToken">
 export type AuthContextValue={
     session:AuthSession|null,
     setSession:(session:AuthSession|null)=>void;
+    refreshAuth: () => Promise<AuthSession | null>;
 }
+
 export const AuthContext=createContext<AuthContextValue|undefined>(undefined);
 
 export function useAuth(){
