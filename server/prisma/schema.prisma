@@ -54,6 +54,7 @@ model User {
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(3)
   shop            Shop?
+  cartItems       CartItem[]
 
   @@map("users")
 }
@@ -242,6 +243,7 @@ model ProductModel {
   product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   tierOptions ModelTierOption[]
   inventory   Inventory?
+  cartItems   CartItem[]
 
   @@unique([productId, optionKey], map: "uq_models_combo")
   @@unique([productId, sku], map: "uq_models_sku")
@@ -269,4 +271,22 @@ model Inventory {
   model ProductModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
   @@map("inventories")
+}
+
+model CartItem {
+  id       BigInt  @id @default(autoincrement())
+  userId   BigInt  @map("user_id")
+  modelId  BigInt  @map("model_id")
+  quantity Int     @default(1)
+  selected Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model ProductModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, modelId], map: "uq_cart_user_model")
+  @@index([modelId], map: "idx_cart_model")
+  @@map("cart_items")
 }
