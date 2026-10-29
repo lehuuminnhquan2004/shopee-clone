@@ -142,7 +142,7 @@ export function AuthProvider({
                     request._loginVersion = loginVersionRef.current
                 }
                 if (!active || request._loginVersion !== loginVersionRef.current) {
-                    throw new Error('Phiên đăng nhập đã thay đổi')
+                    throw new axios.CanceledError("Phiên đăng nhập đã thay đổi");
                 }
 
                 const curentSession = sessionRef.current;
@@ -157,7 +157,7 @@ export function AuthProvider({
                 }
                 return request
             },
-            (error: unknown){
+            (error: unknown)=>{
                 throw error;
             },
             { synchronous: true },
