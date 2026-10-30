@@ -1,0 +1,48 @@
+.cart-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  min-width: 280px;
+  max-width: 90vw;
+  padding: 28px 32px;
+  border-radius: 6px;
+  background: rgba(51, 51, 51, 0.92);
+  color: #fff;
+  text-align: center;
+
+  animation: cart-toast-in 0.2s ease-out;
+  pointer-events: none; /* không chặn click phía sau */
+}
+
+.cart-toast p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.cart-toast-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cart-toast-icon.success { background: #1cc29f; }
+.cart-toast-icon.error   { background: #ee4d2d; }
+
+@keyframes cart-toast-in {
+  from { opacity: 0; transform: translate(-50%, -45%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}

@@ -1,0 +1,49 @@
+.quantity-input {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.quantity-input button,
+.quantity-input input {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  text-align: center;
+  color: #333;
+}
+
+.quantity-input button {
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+}
+
+.quantity-input input:hover:not(:disabled),
+.quantity-input button:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.quantity-input input:disabled,
+.quantity-input button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Hai đường viền dọc ngăn cách ô số với hai nút */
+.quantity-input input {
+  width: 56px;
+  border-left: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  outline: none;
+}
+
+.quantity-input input:focus {
+  background: #fafafa;
+}

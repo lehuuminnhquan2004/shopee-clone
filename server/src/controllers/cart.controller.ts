@@ -28,8 +28,8 @@ export async function addCartItem(
         })
         return
     }
-    const rawModelId = req.body?.modelId;
-    const quantity = req.body?.quantity;
+    const rawModelId:unknown = req.body?.modelId;
+    const quantity:unknown = req.body?.quantity;
 
     if (
         typeof rawModelId !== "string" ||
@@ -65,7 +65,7 @@ export async function addCartItem(
         try {
             const cartItem = await prisma.$transaction(
                 async (tx) => {
-                    const model = await prisma.productModel.findFirst({
+                    const model = await tx.productModel.findFirst({
                         where: {
                             id: modelId,
                             status: "active",
@@ -165,6 +165,7 @@ export async function addCartItem(
                     code: "CART_BUSY",
                     message: "Giỏ hàng đang bận vui lòng thử lại"
                 })
+                return
             }
             if (err instanceof CartError) {
                 res.status(err.status).json({

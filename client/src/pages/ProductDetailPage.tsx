@@ -4,6 +4,8 @@ import { getProductById } from '../api/productsApi';
 import { getApiErrorMessage } from '../lib/api';
 import { useEffect, useState } from 'react';
 import './ProductDetailPage.css'
+import QuantityInput from '../components/cart/QuantityInput';
+import AddToCartButton from '../components/cart/AddToCartButton';
 
 export default function ProductDetailPage() {
     const { productId } = useParams();
@@ -12,7 +14,8 @@ export default function ProductDetailPage() {
     const [error, setError] = useState<string | null>(null)
     const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
-
+    //So luong san pham
+    const [quantity, setQuantity] = useState<number>(1);
 
     useEffect(() => {
         let ignore = false
@@ -23,6 +26,9 @@ export default function ProductDetailPage() {
             setLoading(true)
             setError(null)
             setProduct(null)
+            setQuantity(1)
+            setSelectedOptions({})
+            setSelectedImageId(null)
             try {
                 const data = await getProductById(id)
                 if (!ignore) setProduct(data)
@@ -53,6 +59,11 @@ export default function ProductDetailPage() {
     );
     const activeImageUrl = selectedGalleryImage?.url ?? selectedFirstOption?.imageUrl ?? product?.images[0]?.url
     const activeImage = product?.images.find((item) => item.url === activeImageUrl);
+
+    //Tính số tồn kho của model
+    const availableStock = selectedModel
+        ? Math.max(0,selectedModel.inventory.stock - selectedModel.inventory.reservedStock)
+        : 99;
     return (
         <section className='product-detail'>
             <div>
@@ -118,7 +129,7 @@ export default function ProductDetailPage() {
                                                                     ...previous,
                                                                     [tier.id]: option.id,
                                                                 }))
-                                                                if(tier.id===firstTier?.id)setSelectedImageId(null);
+                                                                if (tier.id === firstTier?.id) setSelectedImageId(null);
                                                             }}
                                                         >
                                                             {option.imageUrl && <img src={option.imageUrl} alt="" />}
@@ -131,8 +142,20 @@ export default function ProductDetailPage() {
                                     ))}
                                 </div>
                             )}
+                            <span className='product-detail-variant-label'>Số lượng</span>
+                            <QuantityInput
+                                value={quantity}
+                                onChange={setQuantity}
+                                max={Number(availableStock)}
+                                disabled={!selectedModel}
+                            />
                             <div className='product-detail-actions'>
-                                <button className="product-detail-actions-add-to-cart">Thêm vào giỏ hàng</button>
+                                <AddToCartButton
+                                    key={product.id}
+                                    selectedModel={selectedModel}
+                                    quantity={quantity}
+                                    hasVariants={product.tiers.length > 0}
+                                />
                                 <button className="product-detail-actions-buy-now">Mua ngay {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫</button>
                             </div>
                         </div>

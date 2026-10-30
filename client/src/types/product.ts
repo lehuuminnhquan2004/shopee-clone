@@ -24,9 +24,15 @@ type TierProductDetailData={
 }
 export type ModelProductDetailData={
   id:string;
-  name:string;
+  name:string|null;
   price:string;
   optionKey:string;
+  inventory:InventoryData;
+}
+export type InventoryData={
+  modelId:string;
+  stock:number;
+  reservedStock:number;
 }
 export type ProductDetailData={
   id:string;

@@ -173,6 +173,13 @@ export async function getProductById(
                         name: true,
                         optionKey:true,
                         price:true,
+                        inventory:{
+                            select:{
+                                modelId:true,
+                                stock:true,
+                                reservedStock:true,
+                            }
+                        }
                     },
                 }
 
@@ -217,6 +224,11 @@ export async function getProductById(
                 name:model.name,
                 optionKey:model.optionKey,
                 price:model.price.toString(),
+                inventory:{
+                    modelId:model.id.toString(),
+                    stock:model.inventory?.stock,
+                    reservedStock:model.inventory?.reservedStock,
+                }
             }))
         })
     } catch (err) {

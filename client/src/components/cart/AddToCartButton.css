@@ -1,0 +1,22 @@
+.product-detail-cart {
+  min-width: 0;
+}
+
+.product-detail-actions-add-to-cart:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.product-detail-cart-message {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.product-detail-cart-message.success {
+  color: #16803c;
+}
+
+.product-detail-cart-message.error {
+  color: #c62828;
+}
