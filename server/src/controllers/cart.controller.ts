@@ -183,3 +183,186 @@ export async function addCartItem(
         }
     }
 }
+
+export async function getCartItems(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.authUser;
+
+  if (!user) {
+    res.status(401).json({
+      message: "Vui lòng đăng nhập",
+    });
+    return;
+  }
+
+  try {
+    const cartItems = await prisma.cartItem.findMany({
+      // Chỉ lấy giỏ hàng của người đã được xác thực.
+      where: {
+        userId: user.id,
+      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { id: "desc" },
+      ],
+      select: {
+        id: true,
+        quantity: true,
+        selected: true,
+        model: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            status: true,
+            inventory: {
+              select: {
+                stock: true,
+                reservedStock: true,
+              },
+            },
+            tierOptions: {
+              // Option của tier đầu tiên đứng trước.
+              orderBy: {
+                tierOption: {
+                  tier: {
+                    position: "asc",
+                  },
+                },
+              },
+              select: {
+                tierOption: {
+                  select: {
+                    imageUrl: true,
+                  },
+                },
+              },
+            },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                deletedAt: true,
+                images: {
+                  orderBy: [
+                    { position: "asc" },
+                    { id: "asc" },
+                  ],
+                  take: 1,
+                  select: {
+                    url: true,
+                  },
+                },
+                shop: {
+                  select: {
+                    id: true,
+                    name: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const items = cartItems.map((item) => {
+      const model = item.model;
+      const product = model.product;
+      const shop = product.shop;
+
+      const availableStock = model.inventory
+        ? Math.max(
+            0,
+            model.inventory.stock - model.inventory.reservedStock,
+          )
+        : 0;
+
+      let unavailableReason: string | null = null;
+
+      if (shop.status !== "active") {
+        unavailableReason = "Shop hiện không hoạt động";
+      } else if (
+        product.status !== "active" ||
+        product.deletedAt !== null
+      ) {
+        unavailableReason = "Sản phẩm hiện không được bán";
+      } else if (model.status !== "active") {
+        unavailableReason = "Biến thể hiện không được bán";
+      } else if (availableStock === 0) {
+        unavailableReason = "Biến thể đã hết hàng";
+      } else if (item.quantity > availableStock) {
+        unavailableReason =
+          `Chỉ còn ${availableStock} sản phẩm, vui lòng giảm số lượng`;
+      }
+
+      // Ưu tiên ảnh option của tier đầu tiên.
+      // Nếu không có, dùng ảnh đầu tiên của sản phẩm.
+      const imageUrl =
+        model.tierOptions[0]?.tierOption.imageUrl ??
+        product.images[0]?.url ??
+        null;
+
+      const lineTotal = model.price * BigInt(item.quantity);
+
+      return {
+        id: item.id.toString(),
+        quantity: item.quantity,
+        selected: item.selected,
+        availableStock,
+        canCheckout: unavailableReason === null,
+        unavailableReason,
+        lineTotal: lineTotal.toString(),
+        model: {
+          id: model.id.toString(),
+          name: model.name,
+          price: model.price.toString(),
+        },
+        product: {
+          id: product.id.toString(),
+          name: product.name,
+          imageUrl,
+        },
+        shop: {
+          id: shop.id.toString(),
+          name: shop.name,
+        },
+      };
+    });
+
+    // Chỉ tính tiền những dòng đã chọn và đang đủ điều kiện mua.
+    const selectedItems = items.filter(
+      (item) => item.selected && item.canCheckout,
+    );
+
+    const selectedSubtotal = selectedItems.reduce(
+      (total, item) => total + BigInt(item.lineTotal),
+      0n,
+    );
+
+    const selectedQuantity = selectedItems.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    );
+
+    res.status(200).json({
+      items,
+      summary: {
+        itemCount: items.length,
+        selectedItemCount: selectedItems.length,
+        selectedQuantity,
+        selectedSubtotal: selectedSubtotal.toString(),
+      },
+    });
+  } catch (error) {
+    console.error("Get cart items error:", error);
+
+    res.status(500).json({
+      message: "Không thể lấy giỏ hàng. Vui lòng thử lại",
+    });
+  }
+}

@@ -11,8 +11,8 @@ export async function getProducts(
                 status: 'active',
             },
             orderBy: [
-                { createdAt: 'desc'},
-                {id:'asc'},
+                { createdAt: 'desc' },
+                { id: 'asc' },
             ],
             select: {
                 id: true,
@@ -165,19 +165,19 @@ export async function getProductById(
                         },
                     },
                 },
-                models:{
-                    where:{status:'active'},
+                models: {
+                    where: { status: 'active' },
                     orderBy: { id: 'asc' },
                     select: {
                         id: true,
                         name: true,
-                        optionKey:true,
-                        price:true,
-                        inventory:{
-                            select:{
-                                modelId:true,
-                                stock:true,
-                                reservedStock:true,
+                        optionKey: true,
+                        price: true,
+                        inventory: {
+                            select: {
+                                modelId: true,
+                                stock: true,
+                                reservedStock: true,
                             }
                         }
                     },
@@ -210,25 +210,25 @@ export async function getProductById(
                 name: product.shop.name,
                 logoUrl: product.shop?.logoUrl ?? null,
             },
-            tiers:product.tiers.map((tier)=>({
-                id:tier.id.toString(),
-                name:tier.name,
-                options:tier.options.map((option)=>({
-                    id:option.id.toString(),
-                    value:option.value,
-                    imageUrl:option.imageUrl??null,
+            tiers: product.tiers.map((tier) => ({
+                id: tier.id.toString(),
+                name: tier.name,
+                options: tier.options.map((option) => ({
+                    id: option.id.toString(),
+                    value: option.value,
+                    imageUrl: option.imageUrl ?? null,
                 }))
             })),
-            models:product.models.map((model)=>({
-                id:model.id.toString(),
-                name:model.name,
-                optionKey:model.optionKey,
-                price:model.price.toString(),
-                inventory:{
-                    modelId:model.id.toString(),
-                    stock:model.inventory?.stock,
-                    reservedStock:model.inventory?.reservedStock,
-                }
+            models: product.models.map((model) => ({
+                id: model.id.toString(),
+                name: model.name,
+                optionKey: model.optionKey,
+                price: model.price.toString(),
+                inventory: {
+                    modelId: model.id.toString(),
+                    stock: model.inventory?.stock ?? 0,
+                    reservedStock: model.inventory?.reservedStock ?? 0,
+                },
             }))
         })
     } catch (err) {

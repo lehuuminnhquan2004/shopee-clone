@@ -72,6 +72,28 @@ export default function AddToCartButton({
             })
             return
         }
+
+        const availableStock = Math.max(
+            0,
+            selectedModel.inventory.stock -
+            selectedModel.inventory.reservedStock,
+        );
+
+        if (quantity > availableStock) {
+            setNotice({
+                modelId: selectedModel.id,
+                userId,
+                quantity,
+                kind: "error",
+                message:
+                    availableStock === 0
+                        ? "Biến thể này đã hết hàng."
+                        : `Biến thể này hiện chỉ còn ${availableStock} sản phẩm.`,
+            });
+            return;
+        }
+
+
         const modelId = selectedModel.id;
         submittingRef.current = true;
         setAdding(true);

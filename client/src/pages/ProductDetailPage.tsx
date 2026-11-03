@@ -62,8 +62,10 @@ export default function ProductDetailPage() {
 
     //Tính số tồn kho của model
     const availableStock = selectedModel
-        ? Math.max(0,selectedModel.inventory.stock - selectedModel.inventory.reservedStock)
+        ? Math.max(0, selectedModel.inventory.stock - selectedModel.inventory.reservedStock)
         : 99;
+
+    
     return (
         <section className='product-detail'>
             <div>
@@ -130,6 +132,9 @@ export default function ProductDetailPage() {
                                                                     [tier.id]: option.id,
                                                                 }))
                                                                 if (tier.id === firstTier?.id) setSelectedImageId(null);
+                                                                if (option.id !== selectedOptions[tier.id]) {
+                                                                    setQuantity(1);
+                                                                }
                                                             }}
                                                         >
                                                             {option.imageUrl && <img src={option.imageUrl} alt="" />}
@@ -142,12 +147,12 @@ export default function ProductDetailPage() {
                                     ))}
                                 </div>
                             )}
-                            <span className='product-detail-variant-label'>Số lượng</span>
+                            <span className='product-detail-variant-label'>{selectedModel ? `Số lượng trong kho: ${availableStock}` : "Số lượng"}</span>
                             <QuantityInput
                                 value={quantity}
                                 onChange={setQuantity}
-                                max={Number(availableStock)}
-                                disabled={!selectedModel}
+                                max={availableStock}
+                                disabled={!selectedModel || availableStock <= 0}
                             />
                             <div className='product-detail-actions'>
                                 <AddToCartButton
