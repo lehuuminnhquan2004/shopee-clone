@@ -3,6 +3,7 @@ import type {
   AddCartItemPayload,
   AddCartItemResponse,
   CartResponse,
+  UpdateCartItemSelectedResponse,
 } from "../types/cart";
 
 export async function addCartItem(payload: AddCartItemPayload): Promise<AddCartItemResponse> {
@@ -11,5 +12,10 @@ export async function addCartItem(payload: AddCartItemPayload): Promise<AddCartI
 }
 export async function getCartItems():Promise<CartResponse>{
   const {data}=await api.get<CartResponse>("/api/cart/items");
+  return data
+}
+
+export async function updateCartItemSelected( itemId: string,selected:boolean):Promise<UpdateCartItemSelectedResponse>{
+  const {data}=await api.post<UpdateCartItemSelectedResponse>(`/api/cart/items/${itemId}/selected`,{selected});
   return data
 }

@@ -52,7 +52,7 @@ export function UserMenu() {
                             <Link to="/account" onClick={() => setOpenUserMenu(false)}>
                                 Tài Khoản Của Tôi
                             </Link>
-                            <Link to="/orders" onClick={() => setOpenUserMenu(false)}>
+                            <Link to="/oders" onClick={() => setOpenUserMenu(false)}>
                                 Đơn Mua
                             </Link>
                             <button type="button" onClick={() => void handleLogout()}>

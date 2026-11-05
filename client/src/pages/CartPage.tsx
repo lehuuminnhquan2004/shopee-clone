@@ -35,9 +35,11 @@ export function CartPage() {
     const [cart, setCart] = useState<CartResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const userId = session?.user.id;
 
     useEffect(() => {
-        if (!session) return;
+
+        if (!userId) return;
         let ignore = false;
 
         async function loadCart() {
@@ -63,12 +65,8 @@ export function CartPage() {
         return () => {
             ignore = true;
         }
-    }, [session])
+    }, [userId])
 
-
-    if (loading) {
-        return <p role="status">Đang tải giỏ hàng...</p>;
-    }
 
     if (loading) {
         return <p role="status">Đang tải giỏ hàng...</p>;
@@ -107,6 +105,13 @@ export function CartPage() {
                                 }`}
                             key={item.id}
                         >
+                            <input
+                                type="checkbox"
+                                checked={item.selected}
+                                disabled={!item.canCheckout}
+                                readOnly
+                                aria-label={`Chọn ${item.product.name}`}
+                            />
                             <img
                                 className="cart-item__image"
                                 src={

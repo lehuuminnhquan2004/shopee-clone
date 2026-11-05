@@ -212,7 +212,7 @@ export async function getCartItems(
         userId: user.id,
       },
       orderBy: [
-        { updatedAt: "desc" },
+        { createdAt: "desc" },
         { id: "desc" },
       ],
       select: {
@@ -374,3 +374,79 @@ export async function getCartItems(
     });
   }
 }
+
+export async function updateCartItemSelected(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.authUser
+
+  if (!user) {
+    res.status(401).json({
+      message: "vui lòng đăng nhập"
+    })
+    return
+  }
+  const rawItemId = req.params.itemId;
+  const selected = req.body?.selected;
+
+  if (
+    typeof rawItemId !== "string" ||
+    !/^[1-9]\d{0,18}$/.test(rawItemId)
+  ) {
+    res.status(400).json({
+      message: "ID dòng giỏ hàng không hợp lệ",
+    });
+    return;
+  }
+
+  const itemId = BigInt(rawItemId);
+
+  if (itemId > MAX_BIGINT) {
+    res.status(400).json({
+      message: "ID dòng giỏ hàng vượt giới hạn cho phép",
+    });
+    return;
+  }
+
+  // false là dữ liệu hợp lệ, không dùng if (!selected).
+  if (typeof selected !== "boolean") {
+    res.status(400).json({
+      message: "selected phải là true hoặc false",
+    });
+    return;
+  }
+
+  try {
+    const result = await prisma.cartItem.updateMany({
+      where: {
+        userId: user.id,
+        id: itemId
+      }, data: {
+        selected,
+      }
+    });
+    if (result.count === 0) {
+      res.status(404).json({
+        message: "Không tìm thấy sản phẩm trong giỏ"
+      })
+      return
+    }
+    res.status(200).json({
+      message: selected
+        ? "Đã chọn sản phẩm"
+        : "Đã bỏ chọn sản phẩm",
+      item: {
+        id: itemId.toString(),
+        selected,
+      },
+    });
+  } catch (error) {
+    console.error("Update cart item selected error:", error);
+
+    res.status(500).json({
+      message: "Không thể cập nhật lựa chọn. Vui lòng thử lại",
+    });
+  }
+}
+

@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { 
     addCartItem,
-    getCartItems 
+    getCartItems, 
+    updateCartItemSelected
 } from "../controllers/cart.controller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
@@ -12,3 +13,4 @@ cartRouter.use(requireAuth);
 
 cartRouter.post("/items", addCartItem);
 cartRouter.get('/items',getCartItems)
+cartRouter.post('/items/:itemId/selected',updateCartItemSelected)

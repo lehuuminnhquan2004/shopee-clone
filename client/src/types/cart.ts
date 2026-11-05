@@ -54,3 +54,14 @@ export type CartResponse = {
   items: CartItem[];
   summary: CartSummary;
 };
+
+//
+type ItemSelected={
+  id:string;
+  selected:boolean;
+}
+
+export type UpdateCartItemSelectedResponse={
+  message:string;
+  item:ItemSelected
+}

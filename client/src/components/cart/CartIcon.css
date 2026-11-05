@@ -1,0 +1,25 @@
+.cart-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #fff;
+  color: #3b9cff;          
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+.header-cart{
+  justify-content: center;
+  margin: 0px 16px;
+  padding: 0px 16px;
+}
