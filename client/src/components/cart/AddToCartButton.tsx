@@ -110,6 +110,7 @@ export default function AddToCartButton({
                 kind: "success",
                 message: `Đã thêm ${quantity} sản phẩm thành công hiện có ${data.item.quantity} sản phẩm này trong giỏ`
             })
+            window.dispatchEvent(new Event("cart-updated"));
         } catch (error) {
             if (axios.isCancel(error)) return;
             setNotice({

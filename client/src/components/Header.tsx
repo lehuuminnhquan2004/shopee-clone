@@ -3,6 +3,7 @@ import { CartIcon } from './cart/CartIcon';
 import './Header.css'
 import { UserMenu } from './HeaderAuth/UserMenu';
 import { getCartItems } from '../api/cartApi';
+import { useAuth } from '../auth/AuthContext';
 
 
 type HeaderProps = {
@@ -15,27 +16,67 @@ export default function Header({
     searchTerm,
     onSearchChange,
 }: HeaderProps) {
-    const [countCart, setCountCart] = useState(0);
+    const { session } = useAuth();
+    const userId = session?.user.id;
+
+    // Ghi nhớ số lượng này thuộc tài khoản nào.
+    const [cartCount, setCartCount] = useState<{
+        userId: string;
+        count: number;
+    } | null>(null);
+
+    // Đăng xuất hoặc đổi tài khoản thì không hiện số của người cũ.
+    const countCart =
+        userId && cartCount?.userId === userId
+            ? cartCount.count
+            : 0;
 
     useEffect(() => {
+        // Chưa đăng nhập thì không gọi API giỏ hàng.
+        if (!userId) return;
+
         let ignore = false;
+        let latestRequest = 0;
 
         async function loadCountCart() {
+            if (!userId) return;
+            const requestId = ++latestRequest;
+
             try {
                 const data = await getCartItems();
-                if (!ignore) setCountCart(data.items.length);
+                
+                // Chỉ nhận kết quả mới nhất của tài khoản hiện tại.
+                if (ignore || requestId !== latestRequest) return;
+
+                setCartCount({
+                    userId,
+                    count: data.summary.itemCount,
+                });
             } catch (error) {
-                console.error(error);
-                if (!ignore) setCountCart(0);
+                if (ignore || requestId !== latestRequest) return;
+
+                console.error("Không thể tải số lượng giỏ hàng:", error);
             }
         }
 
-        loadCountCart();
+        function handleCartUpdated() {
+            void loadCountCart();
+        }
+
+        // Lắng nghe thông báo từ nút thêm giỏ hàng.
+        window.addEventListener("cart-updated", handleCartUpdated);
+
+        // Tải lần đầu khi đăng nhập hoặc mở trang.
+        void loadCountCart();
 
         return () => {
             ignore = true;
+            window.removeEventListener(
+                "cart-updated",
+                handleCartUpdated,
+            );
         };
-    }, []);
+    }, [userId]);
     return (
         <header className="site-header">
             <UserMenu />
