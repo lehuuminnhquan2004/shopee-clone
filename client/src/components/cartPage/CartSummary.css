@@ -1,0 +1,25 @@
+.cart-summary {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 16px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+}
+
+.cart-summary button {
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 4px;
+  background: #ee4d2d;
+  color: white;
+  cursor: pointer;
+}
+
+.cart-summary button:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+}

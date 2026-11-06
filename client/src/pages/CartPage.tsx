@@ -1,16 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { CartItem, CartResponse } from "../types/cart";
-import { getCartItems } from "../api/cartApi";
+import { getCartItems, updateCartItemSelected } from "../api/cartApi";
 import { getApiErrorMessage } from "../lib/api";
 import { Link } from "react-router";
 import './CartPage.css'
+import { CartShopGroup } from "../components/cartPage/CartShopGroup";
+import { CartSummary } from "../components/cartPage/CartSummary";
 
-function formatVnd(value: string): string {
-    return `${BigInt(value).toLocaleString("vi-VN")}₫`;
-}
-
-type ShopGroup = {
+export type ShopGroup = {
     shop: CartItem["shop"];
     items: CartItem[];
 };
@@ -36,6 +34,12 @@ export function CartPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const userId = session?.user.id;
+
+    //state sử lý selected items
+    const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+    const [updateError, setUpdateError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const updatingRef = useRef(false);
 
     useEffect(() => {
 
@@ -65,8 +69,39 @@ export function CartPage() {
         return () => {
             ignore = true;
         }
-    }, [userId])
+    }, [userId, retryCount])
 
+    //Bam chọn hoặc bỏ chọn sản phẩm
+    async function handleSelectedChange(
+        itemId: string,
+        selected: boolean
+    ): Promise<void> {
+        if (!userId || updatingRef.current) return
+
+        updatingRef.current = true;
+        setUpdateError(null);
+        setUpdatingItemId(itemId);
+
+        let saved = false
+
+        try {
+            await updateCartItemSelected(itemId, selected)
+            saved = true
+
+            const updateCart = await getCartItems();
+            setCart(updateCart)
+        } catch (error) {
+            if (saved) {
+                setError("Đã lưu lựa chọn nhưng chưa tải lại được giỏ hàng. " +
+                    "Vui lòng thử tải lại.",)
+            } else {
+                setUpdateError(getApiErrorMessage(error, "Thay đổi lựa chọn không thành công"))
+            }
+        } finally {
+            updatingRef.current = false;
+            setUpdatingItemId(null);
+        }
+    }
 
     if (loading) {
         return <p role="status">Đang tải giỏ hàng...</p>;
@@ -77,6 +112,17 @@ export function CartPage() {
             <section className="cart-page">
                 <h1>Giỏ hàng</h1>
                 <p role="alert">{error}</p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setLoading(true);
+                        setError(null);
+                        setUpdateError(null);
+                        setRetryCount((previous) => previous + 1);
+                    }}
+                >
+                    Tải lại giỏ hàng
+                </button>
             </section>
         );
     }
@@ -94,80 +140,20 @@ export function CartPage() {
     return (
         <section className="cart-page">
             <h1>Giỏ hàng</h1>
+            {updateError && (
+                <p role="alert">{updateError}</p>
+            )}
 
             {groups.map((group) => (
-                <section className="cart-shop" key={group.shop.id}>
-                    <h2>{group.shop.name}</h2>
-
-                    {group.items.map((item) => (
-                        <article
-                            className={`cart-item ${item.canCheckout ? "" : "cart-item--unavailable"
-                                }`}
-                            key={item.id}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={item.selected}
-                                disabled={!item.canCheckout}
-                                readOnly
-                                aria-label={`Chọn ${item.product.name}`}
-                            />
-                            <img
-                                className="cart-item__image"
-                                src={
-                                    item.product.imageUrl ??
-                                    "https://cdn.tgdd.vn/2020/03/GameApp/unnamed-200x200-3.png"
-                                }
-                                alt={item.product.name}
-                            />
-
-                            <div className="cart-item__content">
-                                <Link to={`/products/${item.product.id}`}>
-                                    <h3>{item.product.name}</h3>
-                                </Link>
-
-                                {item.model.name && (
-                                    <p>Phân loại: {item.model.name}</p>
-                                )}
-
-                                <p>
-                                    Đơn giá: {formatVnd(item.model.price)}
-                                </p>
-
-                                <p>Số lượng: {item.quantity}</p>
-
-                                <strong>
-                                    Thành tiền: {formatVnd(item.lineTotal)}
-                                </strong>
-
-                                {!item.canCheckout && (
-                                    <p className="cart-item__warning" role="alert">
-                                        {item.unavailableReason ??
-                                            "Sản phẩm hiện không thể mua"}
-                                    </p>
-                                )}
-                            </div>
-                        </article>
-                    ))}
-                </section>
+                <CartShopGroup
+                    key={group.shop.id}
+                    group={group}
+                    isUpdating={updatingItemId !== null}
+                    onSelectedChange={handleSelectedChange}
+                />
             ))}
 
-            <aside className="cart-summary">
-                <p>
-                    Số sản phẩm đã chọn: {cart.summary.selectedQuantity}
-                </p>
-
-                <strong>
-                    Tạm tính: {formatVnd(cart.summary.selectedSubtotal)}
-                </strong>
-
-                <button
-                    type="button"
-                    disabled={cart.summary.selectedQuantity === 0}
-                >
-                    Mua hàng
-                </button>
-            </aside>
+            <CartSummary summary={cart.summary} updatingItemId={updatingItemId} />
         </section>
     );
 }

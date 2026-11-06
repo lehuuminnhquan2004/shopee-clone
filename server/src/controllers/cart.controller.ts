@@ -450,3 +450,176 @@ export async function updateCartItemSelected(
   }
 }
 
+export async function updateCartItemQuantity(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.authUser;
+
+  if (!user) {
+    res.status(401).json({
+      message: "Vui lòng đăng nhập"
+    })
+    return
+  }
+  const rawItemId = req.params.itemId;
+  const quantity: unknown = req.body?.quantity;
+
+  if (!rawItemId || typeof rawItemId !== "string" || !/^[1-9]\d{0,18}$/.test(rawItemId)) {
+    res.status(400).json({
+      message: "sản phẩm không hợp lệ"
+    })
+    return
+  }
+  const itemId = BigInt(rawItemId);
+  if (itemId > MAX_BIGINT) {
+    res.status(400).json({
+      message: "ID dòng giỏ hàng vượt giới hạn cho phép",
+    });
+    return;
+  }
+
+  if (
+    typeof quantity !== "number" ||
+    !Number.isInteger(quantity) ||
+    quantity <= 0 ||
+    quantity > MAX_INT
+  ) {
+    res.status(400).json({
+      message: "Số lượng phải là số nguyên dương hợp lệ",
+    });
+    return;
+  }
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        const cartItem = await tx.cartItem.findUnique({
+          where: {
+            id: itemId,
+            userId: user.id,
+          },
+          select: {
+            model: {
+              select: {
+                status: true,
+                inventory: {
+                  select: {
+                    stock: true,
+                    reservedStock: true,
+                  }
+                },
+                product: {
+                  select: {
+                    status: true,
+                    deletedAt: true,
+                    shop: {
+                      select: {
+                        status: true,
+                      },
+                    },
+                  }
+                },
+              }
+            }
+          }
+        })
+
+        if (!cartItem) {
+          throw new CartError(
+            404,
+            "CART_ITEM_NOT_FOUND",
+            "Không tìm thấy sản phẩm trong giỏ hàng",
+          );
+        }
+        const model = cartItem.model;
+        const product = model.product;
+
+        if (
+          model.status !== "active" ||
+          product.status !== "active" ||
+          product.deletedAt !== null ||
+          product.shop.status !== "active"
+        ) {
+          throw new CartError(
+            409,
+            "MODEL_UNAVAILABLE",
+            "Sản phẩm hoặc biến thể hiện không được bán",
+          );
+        }
+
+        const availableStock = model.inventory
+          ? Math.max(
+            0,
+            model.inventory.stock - model.inventory.reservedStock,
+          )
+          : 0;
+
+        if (quantity > availableStock) {
+          throw new CartError(
+            409,
+            "INSUFFICIENT_STOCK",
+            availableStock === 0
+              ? "Biến thể đã hết hàng"
+              : `Chỉ còn ${availableStock} sản phẩm có thể mua`,
+          );
+        }
+
+        // Gán số lượng mới, giữ nguyên selected.
+        const result = await tx.cartItem.updateMany({
+          where: {
+            id: itemId,
+            userId: user.id,
+          },
+          data: {
+            quantity,
+          },
+        });
+
+        if (result.count === 0) {
+          throw new CartError(
+            404,
+            "CART_ITEM_NOT_FOUND",
+            "Không tìm thấy sản phẩm trong giỏ hàng",
+          );
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    )
+    res.status(200).json({
+      message: "Đã cập nhật số lượng",
+      item: {
+        id: itemId.toString(),
+        quantity,
+      },
+    });
+  } catch (error) {
+    if (error instanceof CartError) {
+      res.status(error.status).json({
+        code: error.code,
+        message: error.message,
+      });
+      return;
+    }
+
+    // Xung đột với thao tác đồng thời: transaction đã bị hủy.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      res.status(409).json({
+        code: "CART_BUSY",
+        message: "Giỏ hàng đang được cập nhật. Vui lòng thử lại",
+      });
+      return;
+    }
+
+    console.error("Update cart item quantity error:", error);
+
+    res.status(500).json({
+      message: "Không thể cập nhật số lượng. Vui lòng thử lại",
+    });
+  }
+}
+

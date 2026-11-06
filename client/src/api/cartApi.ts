@@ -16,6 +16,6 @@ export async function getCartItems():Promise<CartResponse>{
 }
 
 export async function updateCartItemSelected( itemId: string,selected:boolean):Promise<UpdateCartItemSelectedResponse>{
-  const {data}=await api.post<UpdateCartItemSelectedResponse>(`/api/cart/items/${itemId}/selected`,{selected});
+  const {data}=await api.patch<UpdateCartItemSelectedResponse>(`/api/cart/items/${itemId}/selected`,{selected});
   return data
 }
