@@ -48,4 +48,10 @@
   .site-name {
     display: none;
   }
+  .header-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+ 
 }

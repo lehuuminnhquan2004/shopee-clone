@@ -2,17 +2,24 @@ import { Link } from "react-router";
 import { formatVnd } from "../../lib/format";
 import type { ShopGroup } from "../../pages/CartPage";
 import "./CartShopGroup.css";
+import { CartItemQuantity } from "./CartItemQuantity";
 
 type Props = {
     group: ShopGroup,
     isUpdating: boolean,
     onSelectedChange: (itemId: string, selected: boolean) => void;
+    onQuantityChange: (itemId: string, quantity: number,) => Promise<boolean>;
 }
 
-export function CartShopGroup({ group,isUpdating, onSelectedChange }: Props) {
+export function CartShopGroup({
+    group,
+    isUpdating,
+    onSelectedChange,
+    onQuantityChange
+}: Props) {
     return (
         <section className="cart-shop">
-        <h2>{group.shop.name}</h2>
+            <h2>{group.shop.name}</h2>
             {group.items.map((item) => (
                 <article
                     className={`cart-item ${item.canCheckout ? "" : "cart-item--unavailable"
@@ -21,8 +28,8 @@ export function CartShopGroup({ group,isUpdating, onSelectedChange }: Props) {
                 >
                     <input
                         type="checkbox"
+                        className="cart-checkbox"
                         checked={item.selected}
-                        disabled={isUpdating ||(!item.canCheckout && !item.selected)}
                         aria-label={`Chọn ${item.product.name}`}
                         onChange={(event) => {
                             onSelectedChange(item.id, event.target.checked)
@@ -36,25 +43,37 @@ export function CartShopGroup({ group,isUpdating, onSelectedChange }: Props) {
                         }
                         alt={item.product.name}
                     />
-
                     <div className="cart-item__content">
-                        <Link to={`/products/${item.product.id}`}>
-                            <h3>{item.product.name}</h3>
-                        </Link>
+                        <div className="cart-item__name">
+                            <Link to={`/products/${item.product.id}`} title={item.product.name}>
+                                <h3>{item.product.name}</h3>
+                            </Link>
+                        </div>
+                        <div className="cart-item__model">
+                            {item.model.name && (
+                                <p>Phân loại: {item.model.name}</p>
+                            )}
+                        </div>
+                        <div className="cart-item__price">
+                            <p>
+                                {formatVnd(item.model.price)}
+                            </p>
+                        </div>
+                        <CartItemQuantity
+                            key={`${item.id}`}
+                            value={item.quantity}
+                            max={item.availableStock}
+                            disabled={isUpdating}
+                            onSave={(quantity) => onQuantityChange(item.id, quantity)}
+                        />
+                        <div className="cart-item__tatalPrice">
+                            <p>
+                                <strong>
+                                    {formatVnd(item.lineTotal)}
+                                </strong>
+                            </p>
+                        </div>
 
-                        {item.model.name && (
-                            <p>Phân loại: {item.model.name}</p>
-                        )}
-
-                        <p>
-                            Đơn giá: {formatVnd(item.model.price)}
-                        </p>
-
-                        <p>Số lượng: {item.quantity}</p>
-
-                        <strong>
-                            Thành tiền: {formatVnd(item.lineTotal)}
-                        </strong>
 
                         {!item.canCheckout && (
                             <p className="cart-item__warning" role="alert">

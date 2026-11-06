@@ -19,3 +19,7 @@ export async function updateCartItemSelected( itemId: string,selected:boolean):P
   const {data}=await api.patch<UpdateCartItemSelectedResponse>(`/api/cart/items/${itemId}/selected`,{selected});
   return data
 }
+
+export async function updateCartItemQuantity(itemId:string,quantity:number):Promise<void>{
+    await api.patch(`/api/cart/items/${itemId}/quantity`,{quantity})
+}

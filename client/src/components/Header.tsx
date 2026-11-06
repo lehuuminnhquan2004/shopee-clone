@@ -4,6 +4,7 @@ import './Header.css'
 import { UserMenu } from './HeaderAuth/UserMenu';
 import { getCartItems } from '../api/cartApi';
 import { useAuth } from '../auth/AuthContext';
+import { Link } from 'react-router';
 
 
 type HeaderProps = {
@@ -81,7 +82,7 @@ export default function Header({
         <header className="site-header">
             <UserMenu />
             <div className="container header-content">
-                <h1 className="site-name">MiQ</h1>
+                <h1 className="site-name"><Link to='/'>MiQ</Link></h1>
 
                 <input
                     className="search-input"

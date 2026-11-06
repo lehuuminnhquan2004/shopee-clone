@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { CartItem, CartResponse } from "../types/cart";
-import { getCartItems, updateCartItemSelected } from "../api/cartApi";
+import { getCartItems, updateCartItemQuantity, updateCartItemSelected } from "../api/cartApi";
 import { getApiErrorMessage } from "../lib/api";
 import { Link } from "react-router";
 import './CartPage.css'
@@ -102,6 +102,39 @@ export function CartPage() {
             setUpdatingItemId(null);
         }
     }
+    //Bấm thay đổi số lượng
+    async function handleQuantityChange(
+        itemId:string,
+        quantity:number
+    ):Promise<boolean> {
+        if(!userId||updatingRef.current)return false;
+
+        setUpdatingItemId(itemId)
+        updatingRef.current=true
+        setUpdateError(null)
+
+        let saved=false;
+        try{
+            await updateCartItemQuantity(itemId,quantity)
+            saved=true
+
+            const updateCart=await getCartItems();
+            setCart(updateCart)
+
+            return true;
+        }catch(error){
+            if(saved){
+                setError("Đã lưu số lượng nhưng chưa tải lại được giỏ hàng. " +
+                    "Vui lòng thử tải lại.",)
+            }else{
+                setUpdateError(getApiErrorMessage(error,"thay đổi số lượng không thành công"))
+            }
+            return false
+        }finally{
+            updatingRef.current=false
+            setUpdatingItemId(null)
+        }
+    }
 
     if (loading) {
         return <p role="status">Đang tải giỏ hàng...</p>;
@@ -150,6 +183,7 @@ export function CartPage() {
                     group={group}
                     isUpdating={updatingItemId !== null}
                     onSelectedChange={handleSelectedChange}
+                    onQuantityChange={handleQuantityChange}
                 />
             ))}
 

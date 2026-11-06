@@ -12,9 +12,34 @@
 
 .cart-item {
   display: flex;
-  gap: 16px;
+  gap: 32px;
   padding: 16px 0;
   border-top: 1px solid #eee;
+  align-items: center;
+}
+
+.cart-item__content {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2fr)
+    /* tên */
+    minmax(0, 1fr)
+    /* phân loại */
+    120px
+    /* đơn giá */
+    140px
+    /* số lượng */
+    120px
+    /* thành tiền */
+    100px;
+  /* thao tác (xóa) */
+  align-items: center;
+  column-gap: 16px;
+  padding: 16px;
+}
+
+.cart-item__content>.quantity-input {
+  align-self: center;
 }
 
 .cart-item__image {
@@ -42,4 +67,95 @@
 
 .cart-item__warning {
   color: #ee4d2d;
+}
+
+.cart-item__name h3 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  /* tối đa 2 dòng */
+  line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Nút checkbox */
+.cart-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  flex-shrink: 0;
+}
+
+/* Dấu tick vẽ bằng clip-path */
+.cart-checkbox::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  transform: scale(0);
+  transition: transform 0.1s ease-in-out;
+  clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 20%, 85% 6%, 40% 70%);
+}
+
+/* Trạng thái được chọn */
+.cart-checkbox:checked {
+  background: #26c2ff;
+  border-color: #26c2ff;
+}
+
+.cart-checkbox:checked::before {
+  transform: scale(1);
+}
+
+/* Hover */
+.cart-checkbox:hover:not(:disabled) {
+  border-color: #26c2ff;
+}
+
+/* Viền focus cho người dùng bàn phím */
+.cart-checkbox:focus-visible {
+  outline: 2px solid #26c2ff;
+  outline-offset: 2px;
+}
+
+/* Bị khóa */
+.cart-checkbox:disabled {
+  cursor: not-allowed;
+  background: #ffffff;
+
+}
+
+.cart-checkbox:checked:disabled {
+  background: #26c2ff;
+  /* cam nhạt */
+}
+
+
+@media (max-width:950px) {
+  .cart-item__content {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .cart-item__content>.quantity-input {
+    align-self: start;
+  }
+
+  .cart-item__name h3 {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
 }
