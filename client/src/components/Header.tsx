@@ -4,7 +4,7 @@ import './Header.css'
 import { UserMenu } from './HeaderAuth/UserMenu';
 import { getCartItems } from '../api/cartApi';
 import { useAuth } from '../auth/AuthContext';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 
 type HeaderProps = {
@@ -13,12 +13,16 @@ type HeaderProps = {
 }
 
 
+
 export default function Header({
     searchTerm,
     onSearchChange,
 }: HeaderProps) {
     const { session } = useAuth();
     const userId = session?.user.id;
+
+    const { pathname } = useLocation()
+    const isCartPage = pathname.startsWith('/cart')
 
     // Ghi nhớ số lượng này thuộc tài khoản nào.
     const [cartCount, setCartCount] = useState<{
@@ -45,7 +49,7 @@ export default function Header({
 
             try {
                 const data = await getCartItems();
-                
+
                 // Chỉ nhận kết quả mới nhất của tài khoản hiện tại.
                 if (ignore || requestId !== latestRequest) return;
 
@@ -83,7 +87,7 @@ export default function Header({
             <UserMenu />
             <div className="container header-content">
                 <h1 className="site-name"><Link to='/'>MiQ</Link></h1>
-
+                {isCartPage && <h1 className='name-page'>| Giỏ hàng</h1>}
                 <input
                     className="search-input"
                     type="search"

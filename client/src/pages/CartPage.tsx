@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { CartItem, CartResponse } from "../types/cart";
-import { getCartItems, updateCartItemQuantity, updateCartItemSelected } from "../api/cartApi";
+import { deleteCartItem, getCartItems, updateCartItemQuantity, updateCartItemSelected } from "../api/cartApi";
 import { getApiErrorMessage } from "../lib/api";
 import { Link } from "react-router";
 import './CartPage.css'
@@ -104,35 +104,56 @@ export function CartPage() {
     }
     //Bấm thay đổi số lượng
     async function handleQuantityChange(
-        itemId:string,
-        quantity:number
-    ):Promise<boolean> {
-        if(!userId||updatingRef.current)return false;
+        itemId: string,
+        quantity: number
+    ): Promise<boolean> {
+        if (!userId || updatingRef.current) return false;
 
         setUpdatingItemId(itemId)
-        updatingRef.current=true
+        updatingRef.current = true
         setUpdateError(null)
 
-        let saved=false;
-        try{
-            await updateCartItemQuantity(itemId,quantity)
-            saved=true
+        let saved = false;
+        try {
+            await updateCartItemQuantity(itemId, quantity)
+            saved = true
 
-            const updateCart=await getCartItems();
+            const updateCart = await getCartItems();
             setCart(updateCart)
 
             return true;
-        }catch(error){
-            if(saved){
+        } catch (error) {
+            if (saved) {
                 setError("Đã lưu số lượng nhưng chưa tải lại được giỏ hàng. " +
                     "Vui lòng thử tải lại.",)
-            }else{
-                setUpdateError(getApiErrorMessage(error,"thay đổi số lượng không thành công"))
+            } else {
+                setUpdateError(getApiErrorMessage(error, "thay đổi số lượng không thành công"))
             }
             return false
-        }finally{
-            updatingRef.current=false
+        } finally {
+            updatingRef.current = false
             setUpdatingItemId(null)
+        }
+    }
+
+    //NÚT XÓA
+    async function handleDeleteItem(itemId: string): Promise<void> {
+        if(!userId)return
+        let saved = false;
+        try {
+            await deleteCartItem(itemId)
+            saved = true
+
+            const updateCart = await getCartItems();
+            setCart(updateCart)
+        } catch (error) {
+            if (saved) {
+                setError("Đã xóa thành công nhưng chưa tải lại được giỏ hàng. " +
+                    "Vui lòng thử tải lại.",)
+            } else {
+                setUpdateError(getApiErrorMessage(error, "Xóa không thành công"))
+            }
+        } finally {
         }
     }
 
@@ -143,7 +164,6 @@ export function CartPage() {
     if (error) {
         return (
             <section className="cart-page">
-                <h1>Giỏ hàng</h1>
                 <p role="alert">{error}</p>
                 <button
                     type="button"
@@ -163,7 +183,6 @@ export function CartPage() {
     if (!cart || cart.items.length === 0) {
         return (
             <section className="cart-page">
-                <h1>Giỏ hàng</h1>
                 <p>Giỏ hàng của bạn đang trống.</p>
                 <Link to="/">Tiếp tục mua sắm</Link>
             </section>
@@ -172,7 +191,6 @@ export function CartPage() {
     const groups = groupByShop(cart.items)
     return (
         <section className="cart-page">
-            <h1>Giỏ hàng</h1>
             {updateError && (
                 <p role="alert">{updateError}</p>
             )}
@@ -184,6 +202,7 @@ export function CartPage() {
                     isUpdating={updatingItemId !== null}
                     onSelectedChange={handleSelectedChange}
                     onQuantityChange={handleQuantityChange}
+                    onDeleteItem={handleDeleteItem}
                 />
             ))}
 

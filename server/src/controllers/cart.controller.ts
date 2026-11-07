@@ -623,3 +623,63 @@ export async function updateCartItemQuantity(
   }
 }
 
+export async function deleteCartItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.authUser
+
+  if (!user) {
+    res.status(401).json({
+      message: "Vui lòng đăng nhập"
+    })
+    return
+  }
+
+  const rawItemId = req.params.itemId;
+
+  if (typeof rawItemId !== "string" || !/^[1-9]\d{0,18}$/.test(rawItemId)) {
+    res.status(400).json({
+      message: "ID sản phẩm không hợp lệ"
+    })
+    return
+  }
+  const itemId = BigInt(rawItemId)
+
+  if (itemId > MAX_BIGINT) {
+    res.status(400).json({
+      message: "ID dòng giỏ hàng vượt giới hạn cho phép",
+    });
+    return;
+  }
+  try {
+    const result = await prisma.cartItem.deleteMany({
+      where: {
+        id: itemId,
+        userId: user.id
+      }
+    })
+
+    if (result.count === 0) {
+      res.status(404).json({
+        code: "CART_ITEM_NOT_FOUND",
+        message: "Không tìm thấy sản phẩm trong giỏ hàng",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Đã xóa sản phẩm khỏi giỏ hàng",
+      item: {
+        id: itemId.toString(),
+      },
+    });
+  } catch (error) {
+    console.error("Delete cart item error:", error);
+
+    res.status(500).json({
+      message: "Không thể xóa sản phẩm. Vui lòng thử lại",
+    });
+  }
+}
+

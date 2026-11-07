@@ -3,19 +3,23 @@ import { formatVnd } from "../../lib/format";
 import type { ShopGroup } from "../../pages/CartPage";
 import "./CartShopGroup.css";
 import { CartItemQuantity } from "./CartItemQuantity";
+import { deleteCartItem } from "../../api/cartApi";
 
 type Props = {
     group: ShopGroup,
     isUpdating: boolean,
     onSelectedChange: (itemId: string, selected: boolean) => void;
     onQuantityChange: (itemId: string, quantity: number,) => Promise<boolean>;
+    onDeleteItem:(itemId:string)=>void;
 }
+
 
 export function CartShopGroup({
     group,
     isUpdating,
     onSelectedChange,
-    onQuantityChange
+    onQuantityChange,
+    onDeleteItem
 }: Props) {
     return (
         <section className="cart-shop">
@@ -30,6 +34,7 @@ export function CartShopGroup({
                         type="checkbox"
                         className="cart-checkbox"
                         checked={item.selected}
+                        disabled={isUpdating}
                         aria-label={`Chọn ${item.product.name}`}
                         onChange={(event) => {
                             onSelectedChange(item.id, event.target.checked)
@@ -66,21 +71,22 @@ export function CartShopGroup({
                             disabled={isUpdating}
                             onSave={(quantity) => onQuantityChange(item.id, quantity)}
                         />
-                        <div className="cart-item__tatalPrice">
+                        <div className="cart-item__total-price">
                             <p>
                                 <strong>
                                     {formatVnd(item.lineTotal)}
                                 </strong>
                             </p>
                         </div>
-
-
                         {!item.canCheckout && (
                             <p className="cart-item__warning" role="alert">
                                 {item.unavailableReason ??
                                     "Sản phẩm hiện không thể mua"}
                             </p>
                         )}
+                        <div className="cart-item__actions">
+                            <button className="delete-item" onClick={()=>onDeleteItem(item.id)}>Xóa</button>
+                        </div>
                     </div>
                 </article>
             ))}

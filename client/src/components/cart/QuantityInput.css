@@ -6,6 +6,8 @@
   border-radius: 4px;
   overflow: hidden;
   background: #fff;
+  width: fit-content;
+  justify-self: center;
 }
 
 .quantity-input button,

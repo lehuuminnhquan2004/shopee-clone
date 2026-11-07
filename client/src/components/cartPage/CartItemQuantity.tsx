@@ -14,17 +14,21 @@ export function CartItemQuantity({
     disabled = false,
     onSave,
 }: Props) {
-    const [draftQuantity, setDraftQuantity] = useState(value)
+    const [draftQuantity, setDraftQuantity] = useState<number|null>(null)
+    const displayedQuantity = draftQuantity ?? value;
 
     useEffect(() => {
-        if (disabled || draftQuantity == value) return
+        if (disabled || draftQuantity === null) return
 
+        const quantityToSave = draftQuantity;
         const timer = window.setTimeout(() => {
             async function saveQuantity() {
-                const succses = await onSave(draftQuantity);
-                if (!succses) {
-                    setDraftQuantity(value)
+                if (draftQuantity !== value) {
+                    await onSave(quantityToSave);
                 }
+                setDraftQuantity((current) =>
+                    current === quantityToSave ? null : current,
+                );
             }
             saveQuantity();
         }, 400)
@@ -36,7 +40,7 @@ export function CartItemQuantity({
 
     return (
         <QuantityInput
-            value={draftQuantity}
+            value={displayedQuantity}
             min={1}
             max={Math.max(1, max)}
             disabled={disabled}

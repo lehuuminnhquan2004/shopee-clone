@@ -67,6 +67,7 @@
 
 .cart-item__warning {
   color: #ee4d2d;
+  grid-column: 1 / -1;
 }
 
 .cart-item__name h3 {
@@ -139,7 +140,10 @@
 
 .cart-checkbox:checked:disabled {
   background: #26c2ff;
-  /* cam nhạt */
+}
+
+.delete-item {
+  cursor: pointer;
 }
 
 

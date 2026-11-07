@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { 
     addCartItem,
+    deleteCartItem,
     getCartItems, 
     updateCartItemQuantity, 
     updateCartItemSelected
@@ -16,3 +17,4 @@ cartRouter.post("/items", addCartItem);
 cartRouter.get('/items',getCartItems)
 cartRouter.patch('/items/:itemId/selected',updateCartItemSelected)
 cartRouter.patch('/items/:itemId/quantity',updateCartItemQuantity)
+cartRouter.delete("/items/:itemId", deleteCartItem);

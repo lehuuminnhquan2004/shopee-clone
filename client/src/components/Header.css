@@ -16,6 +16,10 @@
   margin: 0;
   font-size: 48px;
 }
+.name-page {
+  margin: 0;
+  font-size: 24px;
+}
 
 .search-input {
   width: 100%;
