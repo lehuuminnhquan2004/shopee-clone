@@ -3,5 +3,6 @@ export type User={
     email:string|null;
     phone:string|null;
     username:string;
+    avatarUrl:string|null;
     role:'buyer' | 'seller' | 'admin';
 }

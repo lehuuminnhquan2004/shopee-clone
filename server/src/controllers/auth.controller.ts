@@ -134,6 +134,7 @@ export async function login(
                 email: user.email ?? null,
                 phone: user.phone ?? null,
                 username: user.username,
+                avatarUrl:user.avatarUrl??null,
                 role: user.role ?? "buyer",
             },
         });
@@ -803,6 +804,7 @@ export async function googleLogin(
                 email: user.email,
                 phone: user.phone,
                 username: user.username,
+                avatarUrl:user.avatarUrl,
                 role: user.role,
             },
         });
@@ -902,6 +904,7 @@ export async function refresh(
                 email: true,
                 phone: true,
                 username: true,
+                avatarUrl: true,
                 role: true,
                 status: true,
                 deletedAt: true,
@@ -940,6 +943,7 @@ export async function refresh(
                 email: user.email,
                 phone: user.phone,
                 username: user.username,
+                avatarUrl: user.avatarUrl,
                 role: user.role,
             },
         });
@@ -983,6 +987,7 @@ export function getMe(
             email: user.email,
             phone: user.phone,
             username: user.username,
+            avatarUrl: user.avatarUrl,
             role: user.role,
         },
     });

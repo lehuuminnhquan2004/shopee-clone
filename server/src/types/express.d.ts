@@ -5,6 +5,7 @@ type AuthenticatedUser = {
     email: string | null;
     phone: string | null;
     username: string;
+    avatarUrl:string|null;
     role: UserRole;
 };
 

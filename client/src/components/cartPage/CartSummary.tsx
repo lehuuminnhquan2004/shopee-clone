@@ -22,7 +22,7 @@ export function CartSummary({
       selectAllRef.current.indeterminate = partiallySelected;
     }
 
-  }, [partiallySelected])
+  }, [partiallySelected,isUpdating])
 
   return (
     <aside className="cart-summary">

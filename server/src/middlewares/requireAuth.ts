@@ -64,6 +64,7 @@ export async function requireAuth(
                 email: true,
                 phone: true,
                 username: true,
+                avatarUrl:true,
                 role: true,
                 status: true,
                 deletedAt: true,
