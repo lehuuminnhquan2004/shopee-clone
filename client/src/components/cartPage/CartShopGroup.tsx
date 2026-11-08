@@ -3,14 +3,14 @@ import { formatVnd } from "../../lib/format";
 import type { ShopGroup } from "../../pages/CartPage";
 import "./CartShopGroup.css";
 import { CartItemQuantity } from "./CartItemQuantity";
-import { deleteCartItem } from "../../api/cartApi";
+
 
 type Props = {
     group: ShopGroup,
     isUpdating: boolean,
     onSelectedChange: (itemId: string, selected: boolean) => void;
     onQuantityChange: (itemId: string, quantity: number,) => Promise<boolean>;
-    onDeleteItem:(itemId:string)=>void;
+    onDeleteItem: (itemId: string) => void;
 }
 
 
@@ -85,7 +85,11 @@ export function CartShopGroup({
                             </p>
                         )}
                         <div className="cart-item__actions">
-                            <button className="delete-item" onClick={()=>onDeleteItem(item.id)}>Xóa</button>
+                            <button
+                                className="delete-item"
+                                onClick={() => onDeleteItem(item.id)}
+                                disabled={isUpdating}
+                            >Xóa</button>
                         </div>
                     </div>
                 </article>

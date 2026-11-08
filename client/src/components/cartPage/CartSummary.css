@@ -18,8 +18,32 @@
   color: white;
   cursor: pointer;
 }
-
 .cart-summary button:disabled {
-  background: #bbb;
+  background: #ee4d2d;
   cursor: not-allowed;
 }
+
+/* NUt chon tat ca */
+.cart-summary {
+  flex-wrap: wrap;
+}
+
+.cart-summary__select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.cart-summary__select-all input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #26c2ff;
+  cursor: pointer;
+}
+
+.cart-summary__select-all input:disabled {
+  cursor: not-allowed;
+}
+

@@ -159,6 +159,7 @@ export default function ProductDetailPage() {
                                     key={product.id}
                                     selectedModel={selectedModel}
                                     quantity={quantity}
+                                    onResetQuantity={setQuantity}
                                     hasVariants={product.tiers.length > 0}
                                 />
                                 <button className="product-detail-actions-buy-now">Mua ngay {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫</button>

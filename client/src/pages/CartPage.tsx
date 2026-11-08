@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { CartItem, CartResponse } from "../types/cart";
-import { deleteCartItem, getCartItems, updateCartItemQuantity, updateCartItemSelected } from "../api/cartApi";
+import { deleteCartItem, getCartItems, updateCartItemQuantity, updateCartItemSelected, updateCartSelection } from "../api/cartApi";
 import { getApiErrorMessage } from "../lib/api";
 import { Link } from "react-router";
 import './CartPage.css'
@@ -40,6 +40,12 @@ export function CartPage() {
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const updatingRef = useRef(false);
+
+    //TRANG THAI CHON TAT CA
+    const [isSelectingAll, setIsSelectingAll] = useState(false);
+
+    // Dùng chung cho cả thao tác một dòng và toàn bộ giỏ hàng.
+    const isUpdating = updatingItemId !== null || isSelectingAll;
 
     useEffect(() => {
 
@@ -138,11 +144,17 @@ export function CartPage() {
 
     //NÚT XÓA
     async function handleDeleteItem(itemId: string): Promise<void> {
-        if(!userId)return
+        if (!userId || updatingRef.current) return;
+
+        setUpdatingItemId(itemId)
+        updatingRef.current = true
+        setUpdateError(null)
         let saved = false;
         try {
             await deleteCartItem(itemId)
             saved = true
+
+            window.dispatchEvent(new Event("cart-updated"));
 
             const updateCart = await getCartItems();
             setCart(updateCart)
@@ -154,6 +166,44 @@ export function CartPage() {
                 setUpdateError(getApiErrorMessage(error, "Xóa không thành công"))
             }
         } finally {
+            updatingRef.current = false;
+            setUpdatingItemId(null)
+        }
+    }
+
+    //NÚT CHỌN TẤT CẢ SẢN PHẨM
+    async function handleSelectAll(selected: boolean): Promise<void> {
+        if (!userId || updatingRef.current) return;
+
+        updatingRef.current = true;
+        setIsSelectingAll(true);
+        setUpdateError(null);
+
+        let saved = false;
+
+        try {
+            await updateCartSelection(selected);
+            saved = true;
+
+            const updatedCart = await getCartItems();
+            setCart(updatedCart);
+        } catch (error) {
+            if (saved) {
+                setError(
+                    "Đã lưu lựa chọn nhưng chưa tải lại được giỏ hàng. " +
+                    "Vui lòng thử tải lại.",
+                );
+            } else {
+                setUpdateError(
+                    getApiErrorMessage(
+                        error,
+                        "Không thể cập nhật lựa chọn.",
+                    ),
+                );
+            }
+        } finally {
+            updatingRef.current = false;
+            setIsSelectingAll(false);
         }
     }
 
@@ -189,6 +239,17 @@ export function CartPage() {
         );
     }
     const groups = groupByShop(cart.items)
+    const selectedCount = cart.items.filter(
+        (item) => item.selected,
+    ).length;
+
+    const allSelected =
+        cart.items.length > 0 &&
+        selectedCount === cart.items.length;
+
+    const partiallySelected =
+        selectedCount > 0 &&
+        selectedCount < cart.items.length;
     return (
         <section className="cart-page">
             {updateError && (
@@ -199,14 +260,20 @@ export function CartPage() {
                 <CartShopGroup
                     key={group.shop.id}
                     group={group}
-                    isUpdating={updatingItemId !== null}
+                    isUpdating={isUpdating}
                     onSelectedChange={handleSelectedChange}
                     onQuantityChange={handleQuantityChange}
                     onDeleteItem={handleDeleteItem}
                 />
             ))}
 
-            <CartSummary summary={cart.summary} updatingItemId={updatingItemId} />
+            <CartSummary
+                summary={cart.summary}
+                isUpdating={isUpdating}
+                allSelected={allSelected}
+                partiallySelected={partiallySelected}
+                onSelectAll={handleSelectAll}
+            />
         </section>
     );
 }

@@ -4,7 +4,8 @@ import {
     deleteCartItem,
     getCartItems, 
     updateCartItemQuantity, 
-    updateCartItemSelected
+    updateCartItemSelected,
+    updateCartSelection
 } from "../controllers/cart.controller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
@@ -18,3 +19,4 @@ cartRouter.get('/items',getCartItems)
 cartRouter.patch('/items/:itemId/selected',updateCartItemSelected)
 cartRouter.patch('/items/:itemId/quantity',updateCartItemQuantity)
 cartRouter.delete("/items/:itemId", deleteCartItem);
+cartRouter.patch("/selection", updateCartSelection);

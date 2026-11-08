@@ -12,6 +12,7 @@ type AddToCartButtonProps = {
     selectedModel: ModelProductDetailData | undefined;
     quantity: number;
     hasVariants: boolean;
+    onResetQuantity:(quantity:number)=>void;
 };
 
 type CartNotice = {
@@ -26,7 +27,8 @@ type CartNotice = {
 export default function AddToCartButton({
     selectedModel,
     quantity = 1,
-    hasVariants
+    hasVariants,
+    onResetQuantity,
 }: AddToCartButtonProps) {
     const { session } = useAuth();
     const navigate = useNavigate();
@@ -110,6 +112,7 @@ export default function AddToCartButton({
                 kind: "success",
                 message: `Đã thêm ${quantity} sản phẩm thành công hiện có ${data.item.quantity} sản phẩm này trong giỏ`
             })
+            onResetQuantity(1);
             window.dispatchEvent(new Event("cart-updated"));
         } catch (error) {
             if (axios.isCancel(error)) return;

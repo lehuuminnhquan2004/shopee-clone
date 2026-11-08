@@ -27,3 +27,6 @@ export async function updateCartItemQuantity(itemId: string, quantity: number): 
 export async function deleteCartItem(itemId: string): Promise<void> {
   await api.delete(`/api/cart/items/${itemId}`)
 }
+export async function updateCartSelection(selected: boolean,): Promise<void> {
+    await api.patch("/api/cart/selection", { selected });
+}

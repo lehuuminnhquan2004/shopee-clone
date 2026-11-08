@@ -682,4 +682,54 @@ export async function deleteCartItem(
     });
   }
 }
+export async function updateCartSelection(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const user = req.authUser;
+
+  if (!user) {
+    res.status(401).json({
+      message: "Vui lòng đăng nhập",
+    });
+    return;
+  }
+
+  const selected: unknown = req.body?.selected;
+
+  if (typeof selected !== "boolean") {
+    res.status(400).json({
+      message: "selected phải là true hoặc false",
+    });
+    return;
+  }
+
+  try {
+    const result = await prisma.cartItem.updateMany({
+      where: {
+        userId: user.id,
+
+        // Chỉ cập nhật những dòng cần đổi trạng thái.
+        selected: !selected,
+      },
+      data: {
+        selected,
+      },
+    });
+
+    res.status(200).json({
+      message: selected
+        ? "Đã chọn tất cả sản phẩm trong giỏ"
+        : "Đã bỏ chọn tất cả sản phẩm trong giỏ",
+      selected,
+      updatedCount: result.count,
+    });
+  } catch (error) {
+    console.error("Update cart selection error:", error);
+
+    res.status(500).json({
+      message: "Không thể cập nhật lựa chọn. Vui lòng thử lại",
+    });
+  }
+}
 
