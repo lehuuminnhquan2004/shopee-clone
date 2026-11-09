@@ -14,6 +14,7 @@ import {
     verifyOtp,
 } from "../lib/otp.js";
 import { verifyGoogleIdToken } from "../lib/google.js";
+import { toPublicUrl } from "../lib/uploadUrl.js";
 
 const ACCESS_TOKEN_TTL = "15m"
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -134,7 +135,7 @@ export async function login(
                 email: user.email ?? null,
                 phone: user.phone ?? null,
                 username: user.username,
-                avatarUrl:user.avatarUrl??null,
+                avatarUrl: toPublicUrl(user.avatarUrl),
                 role: user.role ?? "buyer",
             },
         });
@@ -804,7 +805,7 @@ export async function googleLogin(
                 email: user.email,
                 phone: user.phone,
                 username: user.username,
-                avatarUrl:user.avatarUrl,
+                avatarUrl: toPublicUrl(user.avatarUrl),
                 role: user.role,
             },
         });
@@ -943,7 +944,7 @@ export async function refresh(
                 email: user.email,
                 phone: user.phone,
                 username: user.username,
-                avatarUrl: user.avatarUrl,
+                avatarUrl: toPublicUrl(user.avatarUrl),
                 role: user.role,
             },
         });
@@ -966,29 +967,4 @@ export async function refresh(
             message: "Không thể khôi phục phiên. Vui lòng thử lại sau",
         });
     }
-}
-
-export function getMe(
-    req: Request,
-    res: Response,
-): void {
-    const user = req.authUser;
-
-    if (!user) {
-        res.status(401).json({
-            message: "Vui lòng đăng nhập",
-        });
-        return;
-    }
-
-    res.status(200).json({
-        user: {
-            id: user.id.toString(),
-            email: user.email,
-            phone: user.phone,
-            username: user.username,
-            avatarUrl: user.avatarUrl,
-            role: user.role,
-        },
-    });
 }

@@ -7,7 +7,6 @@ import {
     resendRegistrationOtp,
     googleLogin,
     refresh,
-    getMe,
 } from '../controllers/auth.controller.js'
 import {
     loginLimiter,
@@ -15,7 +14,6 @@ import {
     verifyRegistrationLimiter,
     resendRegistrationLimiter
 } from "../middlewares/rateLimiter.js";
-import { requireAuth } from "../middlewares/requireAuth.js";
 
 export const authRouter = Router()
 
@@ -26,4 +24,3 @@ authRouter.post("/register/verify", verifyRegistrationLimiter, verifyRegistratio
 authRouter.post("/register/resend", resendRegistrationLimiter, resendRegistrationOtp,);
 authRouter.post("/google", loginLimiter, googleLogin);
 authRouter.post("/refresh", refresh);
-authRouter.get("/me",requireAuth,getMe);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { getMe } from "../api/authApi";
+import { getMe } from "../api/userApi";
 import { getApiErrorMessage } from "../lib/api";
 import type { User } from "../types/user";
 

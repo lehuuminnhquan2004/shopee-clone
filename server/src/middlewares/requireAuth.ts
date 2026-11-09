@@ -91,6 +91,7 @@ export async function requireAuth(
             email: user.email,
             phone: user.phone,
             username: user.username,
+            avatarUrl: user.avatarUrl,
             role: user.role,
         }
 

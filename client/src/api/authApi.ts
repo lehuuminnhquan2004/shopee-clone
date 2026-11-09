@@ -11,7 +11,6 @@ import type {
   ResendRegistrationOtpResponse,
   AuthErrorResponse,
   RegistrationSession,
-  MeResponse,
 } from "../types/auth";
 
 export async function login(payload:LoginPayload):Promise<LoginResponse> {
@@ -69,15 +68,5 @@ export async function refreshSession(
   signal?:AbortSignal
 ):Promise<LoginResponse> {
   const {data}=await api.post<LoginResponse>("/api/auth/refresh",{},{signal,timeout:10000,},)
-  return data
-}
-
-export async function getMe(
-  signal?:AbortSignal,
-):Promise<MeResponse>{
-  const {data}=await api.get<MeResponse>("/api/auth/me",{
-    signal,
-    timeout:10000,
-  },)
   return data
 }

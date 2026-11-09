@@ -4,8 +4,10 @@ import {prisma} from './lib/prisma.js'
 import { categoriesRouter } from './routes/categories.route.js';
 import {productsRouter} from './routes/products.route.js'
 import { authRouter } from './routes/auth.route.js';
+import { userRouter } from './routes/user.route.js';
 import { cartRouter } from "./routes/cart.route.js";
 import cookieParser from "cookie-parser";
+import { UPLOAD_DIR } from "./config/upload.js";
 
 const app=express();
 const PORT=3000;
@@ -18,10 +20,12 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use("/uploads",express.static(UPLOAD_DIR))
 
 app.use('/api/categories',categoriesRouter);
 app.use('/api/products',productsRouter);
 app.use('/api/auth',authRouter);
+app.use('/api/users',userRouter);
 app.use("/api/cart", cartRouter);
 
 app.get('/health/db',async (_req,res)=>{

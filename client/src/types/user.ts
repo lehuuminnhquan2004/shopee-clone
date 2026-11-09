@@ -6,3 +6,7 @@ export type User={
     avatarUrl:string|null;
     role:'buyer' | 'seller' | 'admin';
 }
+
+export type MeResponse = {
+    user: User;
+};
