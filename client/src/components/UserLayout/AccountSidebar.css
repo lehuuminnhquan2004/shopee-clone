@@ -1,0 +1,116 @@
+/* ===== Khung sidebar ===== */
+.account-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 20px 0;
+  color: #333;
+}
+
+/* ===== Khối người dùng ===== */
+.account-sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #efefef;
+}
+
+.account-sidebar__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e0e0e0;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.account-sidebar__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0; /* cho phép text-overflow hoạt động trong flex */
+}
+
+.account-sidebar__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-sidebar__edit {
+  font-size: 13px;
+  color: #888;
+  text-decoration: none;
+}
+
+.account-sidebar__edit:hover {
+  color: #ee4d2d;
+}
+
+/* ===== Menu ===== */
+.account-sidebar nav {
+  padding: 0 16px;
+}
+
+.account-sidebar ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-sidebar__group {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.account-sidebar__sub {
+  margin-bottom: 16px !important;
+  padding-left: 12px !important;
+}
+
+.account-sidebar__main {
+  padding-top: 16px !important;
+  border-top: 1px solid #efefef;
+}
+
+/* ===== Link ===== */
+.account-sidebar__link {
+  display: block;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #555;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.account-sidebar__link:hover {
+  color: #ee4d2d;
+}
+
+.account-sidebar__link--active {
+  color: #ee4d2d;
+  font-weight: 600;
+}
+
+/* Viền focus khi điều hướng bằng bàn phím */
+.account-sidebar__link:focus-visible,
+.account-sidebar__edit:focus-visible {
+  outline: 2px solid #ee4d2d;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ===== Màn hình nhỏ ===== */
+@media (max-width: 768px) {
+  .account-sidebar {
+    width: 100%;
+    padding: 12px 0;
+  }
+}

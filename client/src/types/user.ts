@@ -7,6 +7,14 @@ export type User={
     role:'buyer' | 'seller' | 'admin';
 }
 
+export type Gender = "male" | "female" | "other";
+
+export type UserProfile = User & {
+    fullName: string | null;
+    gender: Gender | null;
+    birthDate: string | null; // YYYY-MM-DD
+};
+
 export type MeResponse = {
-    user: User;
+    user: UserProfile;
 };

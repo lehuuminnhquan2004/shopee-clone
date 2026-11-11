@@ -1,5 +1,6 @@
 import { NavLink } from "react-router";
 import { useAuth } from "../../auth/AuthContext";
+import './AccountSidebar.css'
 
 type MenuItem = {
     label: string,
@@ -7,14 +8,14 @@ type MenuItem = {
 }
 
 const ACCOUNT_ITEMS: MenuItem[] = [
-    { label: "Hồ sơ", to: "/user/profile" },
-    { label: "Ngân hàng", to: "/user/bank" },
-    { label: "Địa chỉ", to: "/user/address" },
-    { label: "Đổi mật khẩu", to: "/user/password" },
+    { label: "Hồ sơ", to: "/account/profile" },
+    { label: "Ngân hàng", to: "/account/bank" },
+    { label: "Địa chỉ", to: "/account/address" },
+    { label: "Đổi mật khẩu", to: "/account/password" },
 ]
 const TOP_ITEMS: MenuItem[] = [
-    { label: "Đơn mua", to: "/user/purchase" },
-    { label: "Kho voucher", to: "/user/voucher" },
+    { label: "Đơn mua", to: "/account/purchase" },
+    { label: "Kho voucher", to: "/account/voucher" },
 ]
 
 export function AccountSidebar() {
@@ -27,7 +28,7 @@ export function AccountSidebar() {
             <div className="account-sidebar__user">
                 <img
                     className="account-sidebar__avatar"
-                    src={avatarUrl}
+                    src={avatarUrl??"http://localhost:3000/uploads/avatars/avatar_default/avatar_default.png"}
                     alt=""
                 />
                 <div className="account-sidebar__info">

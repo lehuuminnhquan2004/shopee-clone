@@ -12,8 +12,9 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import CategoryPage from './pages/CategoryPage'
 import { AuthPage } from './pages/AuthPage'
 import RequireAuth from "./auth/RequireAuth";
-import AccountPage from "./pages/AccountPage";
+import AccountPage from "./pages/UserPage";
 import { CartPage } from './pages/CartPage'
+import ProfilePage from './components/UserLayout/ProfilePage/ProfilePage'
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +37,9 @@ function App() {
           <Route path="/categories/:categoryId" element={<CategoryPage />} />
           <Route path='/auth' element={<AuthPage />} />
           <Route element={<RequireAuth />}>
-            <Route path="/account" element={<AccountPage />} />
+            <Route path="/account" element={<AccountPage />}>
+              <Route path="profile" element={<ProfilePage />}/>
+            </Route>
             <Route path="/cart" element={<CartPage />} />
           </Route>
           <Route

@@ -3,23 +3,52 @@ import { prisma } from "../lib/prisma.js";
 import { toPublicUrl } from "../lib/uploadUrl.js";
 import { deleteUpload } from "../lib/deleteUpload.js";
 
-export function getMe(req: Request, res: Response): void {
-    const user = req.authUser;
-    if (!user) {
+export async function getMe(req: Request, res: Response): Promise<void> {
+    const authUser = req.authUser;
+    if (!authUser) {
         res.status(401).json({ message: "Vui lòng đăng nhập" });
         return;
     }
 
-    res.status(200).json({
-        user: {
-            id: user.id.toString(),
-            email: user.email,
-            phone: user.phone,
-            username: user.username,
-            avatarUrl: toPublicUrl(user.avatarUrl),
-            role: user.role,
-        },
-    });
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: authUser.id },
+            select: {
+                id: true,
+                email: true,
+                phone: true,
+                username: true,
+                fullName: true,
+                avatarUrl: true,
+                gender: true,
+                birthDate: true,
+                role: true,
+            },
+        });
+
+        if (!user) {
+            res.status(404).json({ message: "Không tìm thấy tài khoản" });
+            return;
+        }
+
+        res.status(200).json({
+            user: {
+                id: user.id.toString(),
+                email: user.email,
+                phone: user.phone,
+                username: user.username,
+                fullName: user.fullName,
+                avatarUrl: toPublicUrl(user.avatarUrl),
+                gender: user.gender,
+                // Ngày sinh là ngày trên lịch, trả YYYY-MM-DD cho form.
+                birthDate: user.birthDate?.toISOString().slice(0, 10) ?? null,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        console.error("Lấy hồ sơ thất bại:", error);
+        res.status(500).json({ message: "Không thể tải thông tin hồ sơ" });
+    }
 }
 
 async function removeAvatarSafely(relativePath: string | null): Promise<void> {
