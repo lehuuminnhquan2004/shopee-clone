@@ -4,6 +4,8 @@ import { useAuth } from "../../../auth/AuthContext";
 import type { Gender, UserProfile } from "../../../types/user";
 import { getMe } from "../../../api/userApi";
 import { getApiErrorMessage } from "../../../lib/api";
+import AvatarUploader from "./AvatarUploader";
+import './ProfilePage.css'
 
 export default function ProfilePage() {
   const { session } = useAuth();
@@ -161,7 +163,7 @@ export default function ProfilePage() {
           </div>
         </form>
 
-        {/* <AvatarUploader /> */}
+        <AvatarUploader />
       </div>
     </section>
   );

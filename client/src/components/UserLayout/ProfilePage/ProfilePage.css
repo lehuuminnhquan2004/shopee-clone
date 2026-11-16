@@ -1,0 +1,25 @@
+.user-layout { display: flex; gap: 24px; max-width: 1200px; margin: 0 auto; padding: 20px; }
+.user-layout__content { flex: 1; min-width: 0; background: #fff; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.profile-page { padding: 18px 30px; }
+.profile-page__header { padding-bottom: 14px; border-bottom: 1px solid #efefef; }
+.profile-page__header h1 { margin: 0 0 4px; font-size: 18px; font-weight: 500; }
+.profile-page__header p { margin: 0; font-size: 14px; color: #555; }
+
+.profile-page__body { display: flex; padding-top: 28px; }
+.profile-form { flex: 1; padding-right: 50px; }
+
+.profile-row { display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 20px; margin-bottom: 26px; }
+.profile-row > label:first-child { text-align: right; color: #555; font-size: 14px; }
+.profile-row__value { font-size: 14px; }
+.profile-row__value a { margin-left: 8px; color: #05a; }
+.profile-row input:not([type="radio"]),
+.profile-row select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid #e0e0e0; border-radius: 2px; font-size: 14px; background: #fff; }
+.profile-row input:focus, .profile-row select:focus { outline: none; border-color: #ee4d2d; }
+
+.profile-row__radios { display: flex; gap: 24px; }
+.profile-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.profile-row__selects { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+.profile-save { width: 70px; height: 40px; border: 0; border-radius: 2px; background: #ee4d2d; color: #fff; font-size: 14px; cursor: pointer; }
+.profile-save:hover { background: #d73f20; }
