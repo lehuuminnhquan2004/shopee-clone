@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMe, uploadAvatar } from "../controllers/user.controller.js";
+import { getMe, updateProfile, uploadAvatar } from "../controllers/user.controller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import { avatarUploader, uploadAvatarError } from "../middlewares/uploadAvatar.js";
 
@@ -13,3 +13,4 @@ userRouter.patch(
     uploadAvatar,
     uploadAvatarError,
 );
+userRouter.patch("/me", updateProfile);
