@@ -61,6 +61,19 @@ export function AuthProvider({
         },
         [commitSession],
     );
+    const updateUserAvatar=useCallback((userId:string,avatarUrl:string|null)=>{
+        const curentSession=sessionRef.current
+
+        if(!curentSession||curentSession.user.id!==userId)return
+
+        commitSession({
+            ...curentSession,
+            user:{
+                ...curentSession.user,
+                avatarUrl,
+            },
+        })
+    },[commitSession])
 
     const refreshAuth = useCallback((): Promise<AuthSession | null> => {
         // Chưa đăng nhập thì không refresh theo luồng này.
@@ -320,7 +333,7 @@ export function AuthProvider({
     }
 
     return (
-        <AuthContext.Provider value={{ session, setSession, refreshAuth }}>
+        <AuthContext.Provider value={{ session, setSession, refreshAuth, updateUserAvatar }}>
             {children}
         </AuthContext.Provider>
     );

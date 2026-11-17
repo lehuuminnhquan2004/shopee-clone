@@ -2,6 +2,11 @@ import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { toPublicUrl } from "../lib/uploadUrl.js";
 import { deleteUpload } from "../lib/deleteUpload.js";
+import { compressAvatar } from "../lib/compressAvatar.js";
+import { randomUUID } from "node:crypto";
+import { UPLOAD_DIR } from "../config/upload.js";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 export async function getMe(req: Request, res: Response): Promise<void> {
     const authUser = req.authUser;
@@ -67,7 +72,6 @@ export async function uploadAvatar(req: Request, res: Response): Promise<void> {
     const user = req.authUser;
 
     if (!user) {
-        if (file) await removeAvatarSafely(`avatars/${file.filename}`);
         res.status(401).json({ message: "Vui lòng đăng nhập" });
         return;
     }
@@ -77,29 +81,53 @@ export async function uploadAvatar(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    const newAvatarPath = `avatars/${file.filename}`;
-    let savedAvatarPath: string | null;
+    let compressedImage: Buffer;
+    try {
+        compressedImage = await compressAvatar(file.buffer)
+    } catch (error) {
+        console.error("Xử lý ảnh đại diện thất bại:", error);
+
+        res.status(400).json({
+            message:
+                "Không thể xử lý ảnh. Hãy chọn ảnh tĩnh JPEG, PNG hoặc WebP " +
+                "không quá 20 megapixel.",
+        });
+        return;
+    }
+
+
+    const filename = `${randomUUID()}.webp`;
+    const newAvatarPath = `avatars/${filename}`;
+    const avatarDirectory = path.join(UPLOAD_DIR, "avatars");
+    const absolutePath = path.join(avatarDirectory, filename);
 
     try {
-        const updatedUser = await prisma.user.update({
+        await mkdir(avatarDirectory, { recursive: true });
+
+        //Xử lý ảnh đã giới hạn dung lượng
+        await writeFile(absolutePath, compressedImage);
+
+        await prisma.user.update({
             where: { id: user.id },
-            data: { avatarUrl: newAvatarPath },
-            select: { avatarUrl: true },
+            data: {
+                avatarUrl: newAvatarPath,
+            },
         });
-        savedAvatarPath = updatedUser.avatarUrl;
     } catch (error) {
-        console.error("Cập nhật avatar thất bại:", error);
-        // File đã được Multer lưu nhưng database chưa cập nhật được.
+        console.error("Lưu ảnh đại diện thất bại:", error);
+
+        // Dọn file mới nếu ghi file hoặc cập nhật database thất bại.
         await removeAvatarSafely(newAvatarPath);
+
         res.status(500).json({
-            message: "Không thể cập nhật ảnh đại diện. Vui lòng thử lại",
+            message: "Không thể lưu ảnh đại diện. Vui lòng thử lại",
         });
         return;
     }
 
     // Chỉ xóa ảnh cũ sau khi lưu thành công;
-    if (user.avatarUrl !== savedAvatarPath) {
+    if (user.avatarUrl !== newAvatarPath) {
         await removeAvatarSafely(user.avatarUrl);
     }
-    res.status(200).json({ avatarUrl: toPublicUrl(savedAvatarPath) });
+    res.status(200).json({ avatarUrl: toPublicUrl(newAvatarPath) });
 }

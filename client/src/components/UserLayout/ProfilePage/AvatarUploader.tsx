@@ -1,25 +1,40 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../auth/AuthContext";
 import { uploadAvatar } from "../../../api/userApi";
 import './AvatarUploader.css'
+import { getApiErrorMessage } from "../../../lib/api";
 
-const MAX_SIZE = 2 * 1024 * 1024;
+const MAX_SIZE = 20 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function AvatarUploader() {
-    const { session } = useAuth();
+    const { session, updateUserAvatar } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
 
+    useEffect(() => {
+        if (!preview) return;
+
+        return () => {
+            URL.revokeObjectURL(preview);
+        };
+    }, [preview]);
+
     async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         e.target.value = "";
         if (!file) return
+        const userId = session?.user.id;
+
+        if (!userId) {
+            setError("Vui lòng đăng nhập");
+            return;
+        }
 
         if (!TYPES.includes(file.type)) return setError("Chỉ nhận ảnh JPG,PNG hoặc WEBP");
-        if (file.size > MAX_SIZE) return setError("Ảnh tối đa 2MB");
+        if (file.size > MAX_SIZE) return setError("Ảnh tối đa 20MB");
 
         setError("");
         const objectUrl = URL.createObjectURL(file);
@@ -27,20 +42,26 @@ export default function AvatarUploader() {
         setUploading(true);
 
         try {
-            await uploadAvatar(file);
+            const { avatarUrl } = await uploadAvatar(file);
+
+            //cap nhap session hien thi anh hien tai luu trong server
+            updateUserAvatar(userId, avatarUrl);
+
+            setPreview(null);
         } catch (error) {
-            setError("Không thể tải ảnh lên")
+            setError(
+                getApiErrorMessage(error, "Không thể tải ảnh lên"),
+            );
             setPreview(null);
         } finally {
             setUploading(false);
-            URL.revokeObjectURL(objectUrl);
         }
     }
     return (
         <div className="avatar-uploader">
             <img
                 className="avatar-uploader__img"
-                src={preview ?? session?.user.avatarUrl ?? "/default-avatar.png"}
+                src={preview ?? session?.user.avatarUrl ?? `${import.meta.env.VITE_API_BASE_URL}/uploads/avatars/avatar_default/avatar_default.png`}
                 alt=""
             />
             <input
@@ -59,7 +80,7 @@ export default function AvatarUploader() {
                 {uploading ? "Đang tải..." : "Chọn Ảnh"}
             </button>
             <p className="avatar-uploader__hint">
-                Dung lượng file tối đa 2 MB<br />Định dạng: JPEG, PNG, WebP
+                Dung lượng file tối đa 20 MB<br />Định dạng: JPEG, PNG, WebP
             </p>
             {error && <p role="alert" className="avatar-uploader__error">{error}</p>}
         </div>

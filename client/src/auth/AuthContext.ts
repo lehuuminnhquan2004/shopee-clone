@@ -7,6 +7,10 @@ export type AuthContextValue={
     session:AuthSession|null,
     setSession:(session:AuthSession|null)=>void;
     refreshAuth: () => Promise<AuthSession | null>;
+    updateUserAvatar: (
+        userId: string,
+        avatarUrl: string | null,
+    ) => void;
 }
 
 export const AuthContext=createContext<AuthContextValue|undefined>(undefined);

@@ -1,27 +1,24 @@
 import multer from "multer"
-import crypto from 'crypto'
-import path from "path"
-import fs from 'fs'
-import { UPLOAD_DIR } from "../config/upload.js"
 import { Request,Response,NextFunction } from "express"
 
-const AVATAR_DIR=path.join(UPLOAD_DIR,"avatars")
-fs.mkdirSync(AVATAR_DIR,{recursive:true})
+const ALLOWED_TYPES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+]);
 
-const EXT_BY_MIME:Record<string,string>={
-    "image/jpeg":".jpg",
-    "image/png":".png",
-    "image/webp":".webp",
-}
+export const avatarUploader = multer({
+    storage: multer.memoryStorage(),
 
-export const avatarUploader=multer({
-    storage: multer.diskStorage({
-        destination:(_req,_file,cb)=>cb(null,AVATAR_DIR),
-        filename:(_req,file,cb)=>cb(null,`${crypto.randomUUID()}${EXT_BY_MIME[file.mimetype]}`)
-    }),
-    limits:{fileSize:2*1024*1024},
-    fileFilter:(_req, file, cb) =>cb(null,file.mimetype in EXT_BY_MIME),
-})
+    limits: {
+        fileSize: 20 * 1024 * 1024,
+        files: 1,
+    },
+
+    fileFilter: (_req, file, cb) => {
+        cb(null, ALLOWED_TYPES.has(file.mimetype));
+    },
+});
 
 //Bat loi cua multer
 export function uploadAvatarError(
@@ -37,7 +34,7 @@ export function uploadAvatarError(
 
     if (error instanceof multer.MulterError) {
         if (error.code === "LIMIT_FILE_SIZE") {
-            res.status(413).json({ message: "Ảnh đại diện không được vượt quá 2 MB" });
+            res.status(413).json({ message: "Ảnh đại diện không được vượt quá 20 MB" });
             return;
         }
         res.status(400).json({
