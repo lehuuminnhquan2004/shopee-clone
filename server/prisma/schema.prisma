@@ -35,26 +35,27 @@ enum UserStatus {
 }
 
 model User {
-  id              BigInt     @id @default(autoincrement())
-  username        String     @unique @db.VarChar(50)
-  email           String?    @unique @db.VarChar(255)
-  phone           String?    @unique @db.VarChar(20)
-  passwordHash    String?    @map("password_hash") @db.VarChar(255)
-  googleSub       String?    @unique @map("google_sub") @db.VarChar(255)
-  fullName        String?    @map("full_name") @db.VarChar(100)
-  avatarUrl       String?    @map("avatar_url") @db.VarChar(500)
+  id              BigInt        @id @default(autoincrement())
+  username        String        @unique @db.VarChar(50)
+  email           String?       @unique @db.VarChar(255)
+  phone           String?       @unique @db.VarChar(20)
+  passwordHash    String?       @map("password_hash") @db.VarChar(255)
+  googleSub       String?       @unique @map("google_sub") @db.VarChar(255)
+  fullName        String?       @map("full_name") @db.VarChar(100)
+  avatarUrl       String?       @map("avatar_url") @db.VarChar(500)
   gender          Gender?
-  birthDate       DateTime?  @map("birth_date") @db.Date
-  role            UserRole   @default(buyer)
-  status          UserStatus @default(active)
-  emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(3)
-  phoneVerifiedAt DateTime?  @map("phone_verified_at") @db.Timestamptz(3)
-  lastLoginAt     DateTime?  @map("last_login_at") @db.Timestamptz(3)
-  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(3)
+  birthDate       DateTime?     @map("birth_date") @db.Date
+  role            UserRole      @default(buyer)
+  status          UserStatus    @default(active)
+  emailVerifiedAt DateTime?     @map("email_verified_at") @db.Timestamptz(3)
+  phoneVerifiedAt DateTime?     @map("phone_verified_at") @db.Timestamptz(3)
+  lastLoginAt     DateTime?     @map("last_login_at") @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(3)
   shop            Shop?
   cartItems       CartItem[]
+  addresses       UserAddress[]
 
   @@map("users")
 }
@@ -289,4 +290,53 @@ model CartItem {
   @@unique([userId, modelId], map: "uq_cart_user_model")
   @@index([modelId], map: "idx_cart_model")
   @@map("cart_items")
+}
+
+enum AddressType {
+  home
+  office
+}
+
+model Province {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.VarChar(10)
+  name String @db.VarChar(100)
+
+  wards Ward[]
+
+  @@map("provinces")
+}
+
+model Ward {
+  id         Int    @id @default(autoincrement())
+  provinceId Int    @map("province_id")
+  code       String @unique @db.VarChar(10)
+  name       String @db.VarChar(100)
+
+  province  Province      @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  addresses UserAddress[]
+
+  @@index([provinceId], map: "idx_wards_province")
+  @@map("wards")
+}
+
+model UserAddress {
+  id            BigInt      @id @default(autoincrement())
+  userId        BigInt      @map("user_id")
+  wardId        Int         @map("ward_id")
+  receiverName  String      @map("receiver_name") @db.VarChar(100)
+  receiverPhone String      @map("receiver_phone") @db.VarChar(20)
+  addressDetail String      @map("address_detail") @db.VarChar(255)
+  addressType   AddressType @default(home) @map("address_type")
+  isDefault     Boolean     @default(false) @map("is_default")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?   @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ward Ward @relation(fields: [wardId], references: [id], onDelete: Restrict)
+
+  @@index([userId], map: "idx_addr_user")
+  @@index([wardId], map: "idx_addr_ward")
+  @@map("user_addresses")
 }
