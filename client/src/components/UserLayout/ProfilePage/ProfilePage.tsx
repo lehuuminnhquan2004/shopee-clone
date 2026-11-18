@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../../auth/AuthContext";
 import type { Gender, UserProfile } from "../../../types/user";
-import { getMe } from "../../../api/userApi";
+import { getMe, updateProfile } from "../../../api/userApi";
 import { getApiErrorMessage } from "../../../lib/api";
 import AvatarUploader from "./AvatarUploader";
 import './ProfilePage.css'
+import CartToast from "../../CartToast";
 
 export default function ProfilePage() {
   const { session } = useAuth();
@@ -20,6 +21,35 @@ export default function ProfilePage() {
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
+
+  //UseState phần cập nhập thông tin
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+
+  const [toast, setToast] = useState<{
+    id: number;
+    message: string;
+    kind: "success" | "error";
+  } | null>(null);
+
+  const toastIdRef = useRef(0);
+
+  const closeToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  function showToast(
+    kind: "success" | "error",
+    message: string,
+  ) {
+    toastIdRef.current += 1;
+
+    setToast({
+      id: toastIdRef.current,
+      kind,
+      message,
+    });
+  }
 
   useEffect(() => {
     if (!userId) return;
@@ -65,9 +95,58 @@ export default function ProfilePage() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // gọi API cập nhật hồ sơ
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!userId) return
+
+    //Kiểm tra ngày tháng năm sinh gửi đi
+    const hasAnyDate = Boolean(day || month || year);
+    const hasFullDate = Boolean(day && month && year);
+
+    if (hasAnyDate && !hasFullDate) {
+      showToast("error", "Vui lòng chọn đầy đủ ngày, tháng và năm");
+      return;
+    }
+
+    const birthDate = hasFullDate
+      ? `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+      : null;
+
+    savingRef.current = true;
+    setSaving(true);
+    setToast(null);
+    try {
+      const data = await updateProfile({
+        fullName: name.trim() || null,
+        gender: gender || null,
+        birthDate,
+      });
+
+      setUser(data.user);
+      setName(data.user.fullName ?? "");
+      setGender(data.user.gender ?? "");
+
+      const [yyyy = "", mm = "", dd = ""] =
+        data.user.birthDate?.split("-") ?? [];
+
+      setYear(yyyy);
+      setMonth(mm ? String(Number(mm)) : "");
+      setDay(dd ? String(Number(dd)) : "");
+
+      showToast("success", data.message);
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        showToast(
+          "error",
+          getApiErrorMessage(error, "Cập nhật thông tin thất bại"),
+        );
+      }
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+
   }
 
   if (!userId) return <p>Vui lòng đăng nhập để xem hồ sơ.</p>;
@@ -163,8 +242,19 @@ export default function ProfilePage() {
           </div>
         </form>
 
-        <AvatarUploader />
+        <AvatarUploader onNotify={showToast}/>
       </div>
+
+      {toast && (
+        <CartToast
+          key={toast.id}
+          message={toast.message}
+          kind={toast.kind}
+          onClose={closeToast}
+          duration={toast.kind === "error" ? 4000 : 2000}
+        />
+      )}
+
     </section>
   );
 }

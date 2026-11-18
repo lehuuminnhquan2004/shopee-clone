@@ -7,7 +7,14 @@ import { getApiErrorMessage } from "../../../lib/api";
 const MAX_SIZE = 20 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export default function AvatarUploader() {
+type Props = {
+    onNotify: (
+        kind: "success" | "error",
+        message: string,
+    ) => void;
+};
+
+export default function AvatarUploader({ onNotify }: Props) {
     const { session, updateUserAvatar } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -29,12 +36,19 @@ export default function AvatarUploader() {
         const userId = session?.user.id;
 
         if (!userId) {
-            setError("Vui lòng đăng nhập");
+            onNotify("error", "Vui lòng đăng nhập");
             return;
         }
 
-        if (!TYPES.includes(file.type)) return setError("Chỉ nhận ảnh JPG,PNG hoặc WEBP");
-        if (file.size > MAX_SIZE) return setError("Ảnh tối đa 20MB");
+        if (!TYPES.includes(file.type)) {
+            onNotify("error", "Chỉ nhận ảnh JPG, PNG hoặc WebP");
+            return;
+        }
+
+        if (file.size > MAX_SIZE) {
+            onNotify("error", "Ảnh tối đa 20 MB");
+            return;
+        }
 
         setError("");
         const objectUrl = URL.createObjectURL(file);
@@ -48,8 +62,10 @@ export default function AvatarUploader() {
             updateUserAvatar(userId, avatarUrl);
 
             setPreview(null);
+            onNotify("success", "Cập nhật ảnh đại diện thành công");
         } catch (error) {
-            setError(
+            onNotify(
+                "error",
                 getApiErrorMessage(error, "Không thể tải ảnh lên"),
             );
             setPreview(null);

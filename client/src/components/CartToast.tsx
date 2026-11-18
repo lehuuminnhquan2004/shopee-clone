@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import './CartToat.css'
 
-type CartToastProps = {
+export type CartToastProps = {
   message: string;
   kind: "success" | "error";
   onClose: () => void;
