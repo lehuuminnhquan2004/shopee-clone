@@ -8,6 +8,7 @@ import { userRouter } from './routes/user.route.js';
 import { cartRouter } from "./routes/cart.route.js";
 import cookieParser from "cookie-parser";
 import { UPLOAD_DIR } from "./config/upload.js";
+import { locationsRouter } from './routes/locations.route.js';
 
 const app=express();
 const PORT=3000;
@@ -27,6 +28,7 @@ app.use('/api/products',productsRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/users',userRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/locations", locationsRouter);
 
 app.get('/health/db',async (_req,res)=>{
   try{
