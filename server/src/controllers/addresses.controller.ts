@@ -217,7 +217,7 @@ export async function createAddress(
                 });
             },
             {
-                isolationLevel:Prisma.TransactionIsolationLevel.Serializable,
+                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             },
         );
 
@@ -252,5 +252,118 @@ export async function createAddress(
         res.status(500).json({
             message: "Không thể thêm địa chỉ. Vui lòng thử lại",
         });
+    }
+}
+
+export async function setDefaultAddress(
+    req: Request,
+    res: Response
+): Promise<void> {
+    const user = req.authUser
+    if (!user) {
+        res.status(401).json({
+            message: "Vui lòng đăng nhập"
+        })
+        return
+    }
+
+    const rawAddressId = req.params.addressId
+    if (
+        typeof rawAddressId !== "string" ||
+        !/^[1-9]\d{0,18}$/.test(rawAddressId)
+    ) {
+        res.status(400).json({
+            message: "ID địa chỉ không hợp lệ",
+        });
+        return;
+    }
+
+    const addressId = BigInt(rawAddressId)
+
+    if (addressId > 9223372036854775807n) {
+        res.status(400).json({
+            message: "ID địa chỉ vượt giới hạn cho phép",
+        });
+        return;
+    }
+
+    try {
+        const address = await prisma.$transaction(
+            async (tx) => {
+                const target = await tx.userAddress.findFirst({
+                    where: {
+                        userId: user.id,
+                        id: addressId,
+                        deletedAt: null
+                    }, select: {
+                        id: true,
+                        isDefault: true
+                    }
+                })
+                if (!target) return null
+                if (target.isDefault) return target
+
+                await tx.userAddress.updateMany({
+                    where: {
+                        userId: user.id,
+                        deletedAt: null,
+                        isDefault: true,
+                    }, data: {
+                        isDefault: false
+                    },
+                })
+
+                return tx.userAddress.update({
+                    where: {
+                        id: addressId,
+                        userId: user.id,
+                        deletedAt: null,
+                    },
+                    data: {
+                        isDefault: true,
+                    },
+                    select: {
+                        id: true,
+                        isDefault: true,
+                    },
+                });
+            },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        )
+        if (!address) {
+            res.status(404).json({
+                message: "Không tìm thấy địa chỉ",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Đã đặt địa chỉ mặc định",
+            address: {
+                id: address.id.toString(),
+                isDefault: address.isDefault,
+            },
+        });
+
+    }catch(error){
+        if(error instanceof Prisma.PrismaClientKnownRequestError){
+            if(error.code==="P2034"||error.code==="P2002"){
+                res.status(409).json({
+                    message:"Địa chỉ đã thay đổi bởi thao tác khác vui lòng thử lại"
+                })
+                return
+            }
+            
+            if (error.code === "P2025") {
+                res.status(404).json({
+                    message: "Địa chỉ không còn khả dụng"
+                })
+                return
+            }
+        }
+        res.status(500).json({
+            message: "Không thể đặt địa chỉ mặc định",
+        });
+        
     }
 }
