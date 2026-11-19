@@ -9,6 +9,7 @@ import { cartRouter } from "./routes/cart.route.js";
 import cookieParser from "cookie-parser";
 import { UPLOAD_DIR } from "./config/upload.js";
 import { locationsRouter } from './routes/locations.route.js';
+import { addressesRouter } from './routes/addresses.route.js';
 
 const app=express();
 const PORT=3000;
@@ -29,6 +30,7 @@ app.use('/api/auth',authRouter);
 app.use('/api/users',userRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/locations", locationsRouter);
+app.use("/api/addresses", addressesRouter);
 
 app.get('/health/db',async (_req,res)=>{
   try{

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMyAddresses } from "../controllers/addresses.controller.js";
+import { createAddress, getMyAddresses } from "../controllers/addresses.controller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
 export const addressesRouter = Router();
@@ -8,3 +8,4 @@ export const addressesRouter = Router();
 addressesRouter.use(requireAuth);
 
 addressesRouter.get("/", getMyAddresses);
+addressesRouter.post("/", createAddress);
