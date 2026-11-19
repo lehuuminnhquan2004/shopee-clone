@@ -345,15 +345,15 @@ export async function setDefaultAddress(
             },
         });
 
-    }catch(error){
-        if(error instanceof Prisma.PrismaClientKnownRequestError){
-            if(error.code==="P2034"||error.code==="P2002"){
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === "P2034" || error.code === "P2002") {
                 res.status(409).json({
-                    message:"Địa chỉ đã thay đổi bởi thao tác khác vui lòng thử lại"
+                    message: "Địa chỉ đã thay đổi bởi thao tác khác vui lòng thử lại"
                 })
                 return
             }
-            
+
             if (error.code === "P2025") {
                 res.status(404).json({
                     message: "Địa chỉ không còn khả dụng"
@@ -365,9 +365,10 @@ export async function setDefaultAddress(
         res.status(500).json({
             message: "Không thể đặt địa chỉ mặc định",
         });
-        
+
     }
 }
+
 export async function updateAddress(
     req: Request,
     res: Response,
@@ -541,6 +542,126 @@ export async function updateAddress(
 
         res.status(500).json({
             message: "Không thể cập nhật địa chỉ. Vui lòng thử lại",
+        });
+    }
+}
+
+export async function deleteAddress(
+    req: Request,
+    res: Response,
+): Promise<void> {
+    const user = req.authUser;
+
+    if (!user) {
+        res.status(401).json({
+            message: "Vui lòng đăng nhập",
+        });
+        return;
+    }
+
+    const rawAddressId = req.params.addressId;
+
+    if (
+        typeof rawAddressId !== "string" ||
+        !/^[1-9]\d{0,18}$/.test(rawAddressId)
+    ) {
+        res.status(400).json({
+            message: "ID địa chỉ không hợp lệ",
+        });
+        return;
+    }
+
+    const addressId = BigInt(rawAddressId);
+
+    if (addressId > 9223372036854775807n) {
+        res.status(400).json({
+            message: "ID địa chỉ vượt giới hạn cho phép",
+        });
+        return;
+    }
+
+    try {
+        const result = await prisma.$transaction(
+            async (tx) => {
+                const target = await tx.userAddress.findFirst({
+                    where: {
+                        id: addressId,
+                        userId: user.id,
+                        deletedAt: null,
+                    },
+                    select: {
+                        id: true,
+                        isDefault: true,
+                    },
+                });
+
+                if (!target) return "not_found";
+
+                // Không cho phép xóa địa chỉ đang là mặc định.
+                if (target.isDefault) return "is_default";
+
+                // Xóa mềm và bỏ trạng thái mặc định của địa chỉ này.
+                await tx.userAddress.update({
+                    where: {
+                        id: addressId,
+                        userId: user.id,
+                        deletedAt: null,
+                    },
+                    data: {
+                        deletedAt: new Date(),
+                        isDefault: false,
+                    },
+                });
+
+                return true;
+            },
+            {
+                isolationLevel:
+                    Prisma.TransactionIsolationLevel.Serializable,
+            },
+        );
+
+        if (result === "not_found") {
+            res.status(404).json({
+                message: "Không tìm thấy địa chỉ",
+            });
+            return;
+        }
+
+        if (result === "is_default") {
+            res.status(400).json({
+                message:
+                    "Vui lòng chọn địa chỉ khác làm mặc định trước khi xóa",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Xóa địa chỉ thành công",
+        });
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === "P2034" || error.code === "P2002") {
+                res.status(409).json({
+                    message:
+                        "Địa chỉ vừa được thay đổi bởi thao tác khác. " +
+                        "Vui lòng thử lại",
+                });
+                return;
+            }
+
+            if (error.code === "P2025") {
+                res.status(404).json({
+                    message: "Địa chỉ không còn khả dụng",
+                });
+                return;
+            }
+        }
+
+        console.error("Xóa địa chỉ thất bại:", error);
+
+        res.status(500).json({
+            message: "Không thể xóa địa chỉ. Vui lòng thử lại",
         });
     }
 }

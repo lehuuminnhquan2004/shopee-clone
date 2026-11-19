@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { createAddress, getMyAddresses, setDefaultAddress, updateAddress } from "../controllers/addresses.controller.js";
+import {
+    createAddress,
+    deleteAddress,
+    getMyAddresses,
+    setDefaultAddress,
+    updateAddress
+} from "../controllers/addresses.controller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
 export const addressesRouter = Router();
@@ -9,5 +15,6 @@ addressesRouter.use(requireAuth);
 
 addressesRouter.get("/", getMyAddresses);
 addressesRouter.post("/", createAddress);
-addressesRouter.patch("/:addressId/default",setDefaultAddress,);
+addressesRouter.patch("/:addressId/default", setDefaultAddress,);
 addressesRouter.patch("/:addressId", updateAddress);
+addressesRouter.delete("/:addressId", deleteAddress);
