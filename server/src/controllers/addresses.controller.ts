@@ -361,9 +361,186 @@ export async function setDefaultAddress(
                 return
             }
         }
+        console.error("Đặt địa chỉ mặc định thất bại:", error);
         res.status(500).json({
             message: "Không thể đặt địa chỉ mặc định",
         });
         
+    }
+}
+export async function updateAddress(
+    req: Request,
+    res: Response,
+): Promise<void> {
+    const user = req.authUser;
+
+    if (!user) {
+        res.status(401).json({ message: "Vui lòng đăng nhập" });
+        return;
+    }
+
+    // ID địa chỉ là BigInt, không chuyển qua Number.
+    const rawAddressId = req.params.addressId;
+
+    if (
+        typeof rawAddressId !== "string" ||
+        !/^[1-9]\d{0,18}$/.test(rawAddressId)
+    ) {
+        res.status(400).json({ message: "ID địa chỉ không hợp lệ" });
+        return;
+    }
+
+    const addressId = BigInt(rawAddressId);
+
+    if (addressId > 9223372036854775807n) {
+        res.status(400).json({
+            message: "ID địa chỉ vượt giới hạn cho phép",
+        });
+        return;
+    }
+
+    const rawName: unknown = req.body?.receiverName;
+    const rawPhone: unknown = req.body?.receiverPhone;
+    const rawDetail: unknown = req.body?.addressDetail;
+    const wardId: unknown = req.body?.wardId;
+    const addressType: unknown = req.body?.addressType;
+
+    if (
+        typeof rawName !== "string" ||
+        typeof rawPhone !== "string" ||
+        typeof rawDetail !== "string"
+    ) {
+        res.status(400).json({
+            message: "Tên, số điện thoại và địa chỉ phải là chuỗi",
+        });
+        return;
+    }
+
+    const receiverName = rawName.trim();
+    const receiverPhone = rawPhone.trim();
+    const addressDetail = rawDetail.trim();
+
+    if (!receiverName || Array.from(receiverName).length > 100) {
+        res.status(400).json({
+            message: "Tên người nhận phải có từ 1 đến 100 ký tự",
+        });
+        return;
+    }
+
+    if (!/^0\d{9}$/.test(receiverPhone)) {
+        res.status(400).json({
+            message: "Số điện thoại phải gồm 10 chữ số, bắt đầu bằng 0",
+        });
+        return;
+    }
+
+    if (!addressDetail || Array.from(addressDetail).length > 255) {
+        res.status(400).json({
+            message: "Địa chỉ chi tiết phải có từ 1 đến 255 ký tự",
+        });
+        return;
+    }
+
+    if (
+        typeof wardId !== "number" ||
+        !Number.isInteger(wardId) ||
+        wardId <= 0 ||
+        wardId > 2147483647
+    ) {
+        res.status(400).json({
+            message: "ID xã/phường không hợp lệ",
+        });
+        return;
+    }
+
+    if (addressType !== "home" && addressType !== "office") {
+        res.status(400).json({
+            message: "Loại địa chỉ phải là home hoặc office",
+        });
+        return;
+    }
+
+    try {
+        // Kiểm tra địa chỉ thuộc người đăng nhập và chưa bị xóa.
+        const target = await prisma.userAddress.findFirst({
+            where: {
+                id: addressId,
+                userId: user.id,
+                deletedAt: null,
+            },
+            select: { id: true },
+        });
+
+        if (!target) {
+            res.status(404).json({
+                message: "Không tìm thấy địa chỉ",
+            });
+            return;
+        }
+
+        const ward = await prisma.ward.findUnique({
+            where: { id: wardId },
+            select: { id: true },
+        });
+
+        if (!ward) {
+            res.status(400).json({
+                message: "Xã/phường không tồn tại",
+            });
+            return;
+        }
+
+        const address = await prisma.userAddress.update({
+            // Kiểm tra lại điều kiện ngay tại thao tác ghi.
+            where: {
+                id: addressId,
+                userId: user.id,
+                deletedAt: null,
+            },
+            // Chỉ cập nhật các trường được phép.
+            data: {
+                receiverName,
+                receiverPhone,
+                addressDetail,
+                wardId,
+                addressType,
+            },
+            select: {
+                id: true,
+                isDefault: true,
+            },
+        });
+
+        res.status(200).json({
+            message: "Cập nhật địa chỉ thành công",
+            address: {
+                id: address.id.toString(),
+                isDefault: address.isDefault,
+            },
+        });
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            // Địa chỉ có thể bị xóa sau bước kiểm tra phía trên.
+            if (error.code === "P2025") {
+                res.status(404).json({
+                    message: "Địa chỉ không còn khả dụng",
+                });
+                return;
+            }
+
+            // Xã/phường có thể bị xóa trước lúc cập nhật.
+            if (error.code === "P2003") {
+                res.status(400).json({
+                    message: "Xã/phường không còn khả dụng",
+                });
+                return;
+            }
+        }
+
+        console.error("Cập nhật địa chỉ thất bại:", error);
+
+        res.status(500).json({
+            message: "Không thể cập nhật địa chỉ. Vui lòng thử lại",
+        });
     }
 }
