@@ -1,0 +1,126 @@
+.address-page {
+    padding: 24px 30px;
+    color: #333;
+}
+
+.address-page__header {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #efefef;
+}
+
+.address-page__header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.address-page__content {
+    padding-top: 8px;
+}
+
+.address-page__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.address-item {
+    padding: 20px 0;
+    overflow-wrap: anywhere;
+}
+
+.address-item + .address-item {
+    border-top: 1px solid #efefef;
+}
+
+.address-item__receiver {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.address-item__name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.address-item__phone {
+    padding-left: 12px;
+    border-left: 1px solid #ddd;
+    color: #757575;
+    font-size: 14px;
+}
+
+.address-item__detail,
+.address-item__location {
+    margin: 4px 0;
+    color: #757575;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.address-item__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.address-item__default,
+.address-item__type {
+    padding: 2px 6px;
+    border: 1px solid;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.address-item__default {
+    color: #2e8efb;
+    border-color: #2e8efb;
+}
+
+.address-item__type {
+    color: #757575;
+    border-color: #ddd;
+}
+
+.address-page__empty {
+    padding: 32px 0;
+    color: #757575;
+    text-align: center;
+}
+
+.address-page__error {
+    padding: 16px 0;
+}
+
+.address-page__error p {
+    color: #c62828;
+}
+
+.address-page__retry {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+.address-page__retry:hover {
+    border-color: #2e8efb;
+    color: #2e8efb;
+}
+
+.address-page__retry:focus-visible {
+    outline: 2px solid #2e8efb;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .address-page {
+        padding: 16px;
+    }
+}

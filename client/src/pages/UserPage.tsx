@@ -1,12 +1,13 @@
 import { Outlet } from "react-router";
 import { AccountSidebar } from "../components/UserLayout/AccountSidebar";
+import './UserPage.css'
 
 
 export default function UserPage() {
   return (
     <div className="user-layout">
       <AccountSidebar />
-      <main className="user-layout__content"><Outlet /></main>
+      <div className="user-layout__content"><Outlet /></div>
     </div>
   );
 }

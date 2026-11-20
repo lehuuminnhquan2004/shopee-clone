@@ -613,7 +613,7 @@ export async function deleteAddress(
                     },
                 });
 
-                return true;
+                return "deleted";
             },
             {
                 isolationLevel:

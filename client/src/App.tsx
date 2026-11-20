@@ -15,6 +15,7 @@ import RequireAuth from "./auth/RequireAuth";
 import AccountPage from "./pages/UserPage";
 import { CartPage } from './pages/CartPage'
 import ProfilePage from './components/UserLayout/ProfilePage/ProfilePage'
+import AddressPage from './components/UserLayout/AddressPage/AddressPage'
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,6 +40,7 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route path="/account" element={<AccountPage />}>
               <Route path="profile" element={<ProfilePage />}/>
+              <Route path="address" element={<AddressPage />} />
             </Route>
             <Route path="/cart" element={<CartPage />} />
           </Route>
