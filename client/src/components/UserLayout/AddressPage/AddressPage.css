@@ -4,8 +4,31 @@
 }
 
 .address-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
     padding-bottom: 20px;
     border-bottom: 1px solid #efefef;
+}
+
+.address-page__add {
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 3px;
+    background: #2e8efb;
+    color: #fff;
+    cursor: pointer;
+}
+
+.address-page__add:hover {
+    background: #1976df;
+}
+
+.address-page__add:focus-visible {
+    outline: 2px solid #2e8efb;
+    outline-offset: 3px;
 }
 
 .address-page__header h1 {
@@ -29,7 +52,7 @@
     overflow-wrap: anywhere;
 }
 
-.address-item + .address-item {
+.address-item+.address-item {
     border-top: 1px solid #efefef;
 }
 

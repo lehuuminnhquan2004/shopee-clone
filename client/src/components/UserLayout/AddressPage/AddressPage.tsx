@@ -61,19 +61,19 @@ export default function AddressPage() {
         return () => controller.abort();
     }, [userId, retryCount]);
 
-    {
-        isAddressFormOpen && (
-            <AddressFormDialog
-                onDismiss={() => setIsAddressFormOpen(false)}
-            />
-        )
-    }
-    return (
 
+    return (
         <section
             className="address-page"
             aria-labelledby="address-page-title"
         >
+            {
+                isAddressFormOpen && (
+                    <AddressFormDialog
+                        onDismiss={() => setIsAddressFormOpen(false)}
+                    />
+                )
+            }
             <header className="address-page__header">
                 <h1 id="address-page-title">Địa chỉ của tôi</h1>
 
