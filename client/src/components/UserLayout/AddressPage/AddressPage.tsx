@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../../auth/AuthContext";
 import { getMyAddresses } from "../../../api/addressesApi";
@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "../../../lib/api";
 import type { UserAddress } from "../../../types/address";
 import "./AddressPage.css";
 import AddressFormDialog from "./AddressFormDialog";
+import CartToast from "../../CartToast";
 
 export default function AddressPage() {
     const { session } = useAuth();
@@ -17,6 +18,10 @@ export default function AddressPage() {
     const [retryCount, setRetryCount] = useState(0);
     //state dong mo them dia chi
     const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+
+    //State cap nhap message hien thi len card toast
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
 
     useEffect(() => {
         if (!userId) return;
@@ -60,17 +65,35 @@ export default function AddressPage() {
         // Hủy request khi rời trang hoặc effect chạy lại.
         return () => controller.abort();
     }, [userId, retryCount]);
+    const closeToast = useCallback(() => {
+        setSuccessMessage(null);
+    }, []);
 
+    function handleAddressCreated(message: string) {
+        setIsAddressFormOpen(false);
+        setSuccessMessage(message);
+
+        // Effect lấy danh sách hiện tại sẽ chạy lại.
+        setRetryCount((count) => count + 1);
+    }
 
     return (
         <section
             className="address-page"
             aria-labelledby="address-page-title"
         >
+            {successMessage && (
+                <CartToast
+                    message={successMessage}
+                    kind="success"
+                    onClose={closeToast}
+                />
+            )}
             {
                 isAddressFormOpen && (
                     <AddressFormDialog
                         onDismiss={() => setIsAddressFormOpen(false)}
+                        onCreated={handleAddressCreated}
                     />
                 )
             }
@@ -80,7 +103,10 @@ export default function AddressPage() {
                 <button
                     type="button"
                     className="address-page__add"
-                    onClick={() => setIsAddressFormOpen(true)}
+                    onClick={() => {
+                        setSuccessMessage(null);
+                        setIsAddressFormOpen(true);
+                    }}
                 >
                     + Thêm địa chỉ mới
                 </button>

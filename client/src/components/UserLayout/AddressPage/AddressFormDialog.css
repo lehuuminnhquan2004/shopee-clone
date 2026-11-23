@@ -166,6 +166,42 @@
     outline-offset: 2px;
 }
 
+.address-form__load-error p {
+    margin: 0 0 6px;
+    color: #c62828;
+    font-size: 13px;
+}
+
+.address-form__load-error button {
+    padding: 4px 0;
+    border: 0;
+    background: transparent;
+    color: #2e8efb;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.address-form__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.address-form__submit-error {
+    margin: 0;
+    color: #c62828;
+    font-size: 14px;
+}
+
+/* Đặt sau rule .address-form__actions button hiện có. */
+.address-form__actions button:disabled,
+.address-dialog__close:disabled {
+    cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
     .address-dialog {
         padding: 20px 16px;
