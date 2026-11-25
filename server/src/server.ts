@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import { UPLOAD_DIR } from "./config/upload.js";
 import { locationsRouter } from './routes/locations.route.js';
 import { addressesRouter } from './routes/addresses.route.js';
+import { checkoutRouter } from "./routes/checkout.route.js";
 
 const app=express();
 const PORT=3000;
@@ -31,6 +32,7 @@ app.use('/api/users',userRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/locations", locationsRouter);
 app.use("/api/addresses", addressesRouter);
+app.use("/api/checkout", checkoutRouter);
 
 app.get('/health/db',async (_req,res)=>{
   try{

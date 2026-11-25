@@ -3,7 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import type { CartItem, CartResponse } from "../types/cart";
 import { deleteCartItem, getCartItems, updateCartItemQuantity, updateCartItemSelected, updateCartSelection } from "../api/cartApi";
 import { getApiErrorMessage } from "../lib/api";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import './CartPage.css'
 import { CartShopGroup } from "../components/cartPage/CartShopGroup";
 import { CartSummary } from "../components/cartPage/CartSummary";
@@ -47,6 +47,30 @@ export function CartPage() {
     // Dùng chung cho cả thao tác một dòng và toàn bộ giỏ hàng.
     const isUpdating = updatingItemId !== null || isSelectingAll;
 
+    const navigate = useNavigate();
+
+    //Bấm mua hàng
+    function handleCheckout() {
+        if (!userId || updatingRef.current || !cart) return
+
+        const selectedItems = cart.items.filter((item) => item.selected)
+
+        if (selectedItems.length === 0) {
+            setUpdateError("Vui lòng chọn sản phẩm muốn mua.");
+            return;
+        }
+        const unavailableItem = selectedItems.find((item) => !item.canCheckout)
+        if (unavailableItem) {
+            setUpdateError(
+                `${unavailableItem.product.name}: ${unavailableItem.unavailableReason ??
+                "Sản phẩm hiện không thể mua"
+                }. Vui lòng bỏ chọn hoặc điều chỉnh số lượng.`,
+            );
+            return;
+        }
+        setUpdateError(null);
+        navigate("/checkout");
+    }
     useEffect(() => {
 
         if (!userId) return;
@@ -273,6 +297,7 @@ export function CartPage() {
                 allSelected={allSelected}
                 partiallySelected={partiallySelected}
                 onSelectAll={handleSelectAll}
+                onCheckout={handleCheckout}
             />
         </section>
     );

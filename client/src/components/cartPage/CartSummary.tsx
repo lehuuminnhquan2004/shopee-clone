@@ -8,6 +8,7 @@ type Props = {
   allSelected: boolean;
   partiallySelected: boolean;
   onSelectAll: (selected: boolean) => Promise<void>;
+  onCheckout: () => void;
 };
 export function CartSummary({
   summary,
@@ -15,6 +16,7 @@ export function CartSummary({
   allSelected,
   partiallySelected,
   onSelectAll,
+  onCheckout,
 }: Props) {
   const selectAllRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -22,7 +24,7 @@ export function CartSummary({
       selectAllRef.current.indeterminate = partiallySelected;
     }
 
-  }, [partiallySelected,isUpdating])
+  }, [partiallySelected, isUpdating])
 
   return (
     <aside className="cart-summary">
@@ -41,10 +43,14 @@ export function CartSummary({
       </label>
       <p>Số sản phẩm đã chọn: {summary.selectedQuantity}</p>
       <strong>Tạm tính: {formatVnd(summary.selectedSubtotal)}</strong>
-      <button type="button" disabled={
-        isUpdating ||
-        summary.selectedQuantity === 0
-      }>Mua hàng</button>
+      <button
+        type="button"
+        disabled={
+          isUpdating ||
+          summary.selectedQuantity === 0
+        }
+        onClick={onCheckout}
+      >Mua hàng</button>
     </aside>
   );
 }
