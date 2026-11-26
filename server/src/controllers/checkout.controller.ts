@@ -1,5 +1,16 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+
+import {
+    CheckoutError,
+    createCheckout,
+} from "../services/checkout.service.js";
+
+import {
+    parseCreateCheckoutInput,
+} from "../validators/checkout.validator.js";
+
+
 export async function getCheckoutPreview(
     req: Request,
     res: Response
@@ -286,6 +297,67 @@ export async function getCheckoutPreview(
 
         res.status(500).json({
             message: "Không thể tải thông tin thanh toán.",
+        });
+    }
+}
+
+//Controller xư lý đặt hàng
+export async function placeCheckout(
+    req: Request,
+    res: Response,
+): Promise<void> {
+    const user = req.authUser;
+
+    if (!user) {
+        res.status(401).json({
+            code: "UNAUTHORIZED",
+            message: "Vui lòng đăng nhập.",
+        });
+        return;
+    }
+
+    try {
+        // Kiểm tra và chuẩn hóa dữ liệu trước khi gọi service.
+        const parsed = parseCreateCheckoutInput(req.body);
+
+        if (!parsed.success) {
+            res.status(400).json({
+                code: "INVALID_CHECKOUT_INPUT",
+                message: parsed.message,
+            });
+            return;
+        }
+
+        // User ID lấy từ thông tin xác thực, không lấy từ body.
+        const result = await createCheckout(
+            user.id,
+            parsed.data,
+        );
+
+        // Tạo mới: 201. Trả lại checkout đã tạo: 200.
+        res.status(result.reused ? 200 : 201).json({
+            message: result.reused
+                ? "Yêu cầu này đã được đặt hàng thành công trước đó."
+                : "Đặt hàng thành công.",
+            reused: result.reused,
+            checkout: result.checkout,
+        });
+    } catch (error) {
+        // Lỗi nghiệp vụ do service chủ động trả về.
+        if (error instanceof CheckoutError) {
+            res.status(error.status).json({
+                code: error.code,
+                message: error.message,
+            });
+            return;
+        }
+
+        // Lỗi ngoài dự kiến: ghi chi tiết ở server.
+        console.error("Đặt hàng thất bại:", error);
+
+        res.status(500).json({
+            code: "CHECKOUT_FAILED",
+            message: "Không thể hoàn tất yêu cầu. Vui lòng thử lại với cùng mã yêu cầu.",
         });
     }
 }
