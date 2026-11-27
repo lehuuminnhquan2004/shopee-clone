@@ -142,6 +142,42 @@
     gap: 16px;
 }
 
+.checkout-submit-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.checkout-submit-button {
+    max-width: 100%;
+    padding: 12px 28px;
+    border: 0;
+    border-radius: 4px;
+    background: #2e8efb;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.checkout-submit-button:hover:not(:disabled) {
+    background: #1878e5;
+}
+
+.checkout-submit-button:disabled {
+    cursor: not-allowed;
+}
+
+.checkout-submit-button:focus-visible {
+    outline: 2px solid #185db0;
+    outline-offset: 3px;
+}
+
+.checkout-submit-error {
+    margin-top: 16px;
+    color: #c62828;
+}
+
+
 @media (max-width: 700px) {
     .checkout-panel {
         padding: 16px;

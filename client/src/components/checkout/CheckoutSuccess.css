@@ -1,0 +1,91 @@
+.success-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 0px 16px;
+}
+
+.success-card {
+    width: 100%;
+    max-width: 600px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.success-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #e6f7ec;
+    color: #22a559;
+    font-size: 36px;
+    line-height: 72px;
+    font-weight: bold;
+}
+
+.success-card h1 {
+    font-size: 26px;
+    margin: 0 0 8px;
+}
+
+.success-sub {
+    color: #777;
+    margin: 0 0 28px;
+}
+
+.success-info {
+    margin: 0 0 28px;
+    text-align: left;
+}
+
+.success-info>div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.success-info dt {
+    color: #777;
+}
+
+.success-info dd {
+    margin: 0;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.success-info .total dd {
+    font-size: 20px;
+    color: #1a6fe0;
+}
+
+.success-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-outline {
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: #1a6fe0;
+    color: #fff;
+}
+
+.btn-outline {
+    border: 1px solid #1a6fe0;
+    color: #1a6fe0;
+    background: #fff;
+}

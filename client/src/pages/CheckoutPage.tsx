@@ -1,12 +1,21 @@
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
-import { getCheckoutPreview } from "../api/checkoutApi";
+import {
+    createCheckout,
+    getCheckoutPreview,
+} from "../api/checkoutApi";
+
 import { getApiErrorMessage } from "../lib/api";
 import { formatVnd } from "../lib/format";
-import type { CheckoutPreview } from "../types/checkout";
+import type {
+    CheckoutPreview,
+    CreateCheckoutPayload,
+    CreateCheckoutResponse,
+} from "../types/checkout";
 import "./CheckoutPage.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
+import { CheckoutSuccess } from "../components/checkout/CheckoutSuccess";
 
 export default function CheckoutPage() {
     const { session } = useAuth();
@@ -16,6 +25,172 @@ export default function CheckoutPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
+
+    const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+    //State cho nut mua hang
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [needsReload, setNeedsReload] = useState(false);
+
+    const [checkoutResult, setCheckoutResult] =
+        useState<CreateCheckoutResponse | null>(null);
+
+    // Chặn nhấn liên tiếp ngay lập tức.
+    const submittingRef = useRef(false);
+
+    // Chặn gửi thêm sau khi đã nhận kết quả thành công.
+    const completedRef = useRef(false);
+
+    // Giữ nguyên cả key và dữ liệu khi thử lại.
+    const pendingPayloadRef =
+        useRef<CreateCheckoutPayload | null>(null);
+
+    // Không cập nhật giao diện sau khi rời trang.
+    const mountedRef = useRef(false);
+
+    useEffect(() => {
+        mountedRef.current = true;
+
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
+    //Xử lý sự kiện ấn nút mua hàng tạo đơn
+    async function handlePlaceOrder() {
+        if (
+            !userId ||
+            submittingRef.current ||
+            completedRef.current ||
+            loading ||
+            error ||
+            needsReload
+        ) {
+            return;
+        }
+
+        submittingRef.current = true;
+        setSubmitting(true);
+        setSubmitError(null);
+
+        try {
+            // Chỉ tạo payload khi chưa có yêu cầu đang chờ kết quả.
+            if (!pendingPayloadRef.current) {
+                if (!preview?.address || !preview.canPlaceOrder) {
+                    setSubmitError(
+                        "Vui lòng kiểm tra địa chỉ nhận hàng.",
+                    );
+                    return;
+                }
+
+                const items = preview.groups.flatMap((group) =>
+                    group.items.map((item) => ({
+                        cartItemId: item.cartItemId,
+                        quantity: item.quantity,
+                        expectedUnitPrice: item.unitPrice,
+                    })),
+                );
+
+                if (items.length === 0 || items.length > 100) {
+                    setSubmitError(
+                        "Mỗi lần đặt hàng cần từ 1 đến 100 dòng sản phẩm.",
+                    );
+                    return;
+                }
+
+                pendingPayloadRef.current = {
+                    idempotencyKey: crypto.randomUUID(),
+                    addressId: preview.address.id,
+                    paymentMethod: "cod",
+                    items,
+                    expectedGrandTotal: preview.summary.grandTotal,
+                };
+            }
+
+            const result = await createCheckout(
+                pendingPayloadRef.current,
+            );
+            // Thông báo cho cart Header tải lại số lượng ở giỏ hàng.
+            window.dispatchEvent(new Event("cart-updated"));
+
+            if (!mountedRef.current) return;
+
+            completedRef.current = true;
+            pendingPayloadRef.current = null;
+
+            setCheckoutResult(result);
+            setShowSuccessToast(true);
+        } catch (error) {
+            if (!mountedRef.current) return;
+
+            const code = axios.isAxiosError<{ code?: unknown }>(error)
+                ? error.response?.data?.code
+                : undefined;
+
+            // Lỗi do dữ liệu đã thay đổi không cố thử lại
+            const reloadCodes = [
+                "ADDRESS_UNAVAILABLE",
+                "CART_CHANGED",
+                "QUANTITY_CHANGED",
+                "PRODUCT_UNAVAILABLE",
+                "INVALID_PRODUCT_PRICE",
+                "PRICE_CHANGED",
+                "INSUFFICIENT_STOCK",
+                "AMOUNT_LIMIT_EXCEEDED",
+                "TOTAL_CHANGED",
+            ];
+
+            if (
+                typeof code === "string" &&
+                reloadCodes.includes(code)
+            ) {
+                pendingPayloadRef.current = null;
+                setNeedsReload(true);
+
+                setSubmitError(
+                    getApiErrorMessage(
+                        error,
+                        "Thông tin đặt hàng đã thay đổi. Vui lòng tải lại.",
+                    ),
+                );
+            } else {
+                // Mất mạng, timeout, lỗi server hoặc yêu cầu thử lại:
+                // giữ nguyên payload,không tự tạo key mới.
+                setSubmitError(
+                    getApiErrorMessage(
+                        error,
+                        "Chưa nhận được kết quả đặt hàng. Vui lòng thử lại yêu cầu.",
+                    ),
+                );
+            }
+        } finally {
+            submittingRef.current = false;
+
+            if (mountedRef.current) {
+                setSubmitting(false);
+            }
+        }
+    }
+
+    //Xử lý trường hợp thông tin đơn hàng thay đổi cần reload checkout
+    function handleReloadCheckout() {
+        if (
+            submittingRef.current ||
+            completedRef.current ||
+            !needsReload
+        ) {
+            return;
+        }
+
+        pendingPayloadRef.current = null;
+        setSubmitError(null);
+        setNeedsReload(false);
+
+        // Chặn đặt hàng bằng preview cũ trong lúc chờ effect chạy.
+        setLoading(true);
+        setRetryCount((count) => count + 1);
+    }
 
     useEffect(() => {
         if (!userId) return;
@@ -58,8 +233,23 @@ export default function CheckoutPage() {
         return () => controller.abort();
     }, [userId, retryCount]);
 
+    //Hàm đóng toast truyền qua component con
+    const closeSuccessToast = useCallback(() => {
+        setShowSuccessToast(false)
+    }, [])
+
     if (loading) {
         return <p role="status">Đang tải thông tin thanh toán...</p>;
+    }
+
+    if (checkoutResult) {
+        return (
+            <CheckoutSuccess
+                checkoutResult={checkoutResult}
+                showSuccessToast={showSuccessToast}
+                onCloseToast={closeSuccessToast}
+            />
+        );
     }
 
     if (error) {
@@ -228,6 +418,39 @@ export default function CheckoutPage() {
                         Vui lòng thêm địa chỉ nhận hàng để tiếp tục.
                     </p>
                 )}
+
+                {submitError && (
+                    <p className="checkout-submit-error" role="alert">
+                        {submitError}
+                    </p>
+                )}
+
+                <div className="checkout-submit-actions">
+                    {needsReload ? (
+                        <button
+                            type="button"
+                            className="checkout-submit-button"
+                            onClick={handleReloadCheckout}
+                            disabled={submitting}
+                        >
+                            Tải lại thông tin thanh toán
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            className="checkout-submit-button"
+                            onClick={handlePlaceOrder}
+                            disabled={submitting || !preview.canPlaceOrder}
+                            aria-busy={submitting}
+                        >
+                            {submitting
+                                ? "Đang xử lý..."
+                                : submitError
+                                    ? "Thử lại yêu cầu đặt hàng"
+                                    : "Đặt hàng"}
+                        </button>
+                    )}
+                </div>
             </div>
         </section>
     );
