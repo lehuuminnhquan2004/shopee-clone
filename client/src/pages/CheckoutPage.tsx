@@ -1,14 +1,17 @@
-import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import {
+    createBuyNowCheckout,
     createCheckout,
+    getBuyNowCheckoutPreview,
     getCheckoutPreview,
 } from "../api/checkoutApi";
 
 import { getApiErrorMessage } from "../lib/api";
 import { formatVnd } from "../lib/format";
 import type {
+    BuyNowCheckoutPreview,
     CheckoutPreview,
+    CreateBuyNowCheckoutPayload,
     CreateCheckoutPayload,
     CreateCheckoutResponse,
 } from "../types/checkout";
@@ -16,15 +19,37 @@ import "./CheckoutPage.css";
 import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { CheckoutSuccess } from "../components/checkout/CheckoutSuccess";
+import { Link, useSearchParams } from "react-router";
+
+type CheckoutPagePreview =
+    | CheckoutPreview
+    | BuyNowCheckoutPreview;
+
+// Mỗi source đi cùng đúng kiểu payload của nó.
+type PendingCheckoutRequest =
+    | {
+        source: "cart";
+        payload: CreateCheckoutPayload;
+    }
+    | {
+        source: "buy_now";
+        payload: CreateBuyNowCheckoutPayload;
+    };
 
 export default function CheckoutPage() {
     const { session } = useAuth();
     const userId = session?.user.id;
 
-    const [preview, setPreview] = useState<CheckoutPreview | null>(null);
+    const [preview, setPreview] = useState<CheckoutPagePreview | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
+
+    //State cho hien thị checkou từ nút mua ngay ở trang chi tiết sản phẩm
+    const [searchParams] = useSearchParams();
+    const source = searchParams.get("source") ?? "cart";
+    const buyNowModelId = searchParams.get("modelId");
+    const buyNowQuantity = searchParams.get("quantity");
 
     const [showSuccessToast, setShowSuccessToast] = useState(false);
 
@@ -44,7 +69,7 @@ export default function CheckoutPage() {
 
     // Giữ nguyên cả key và dữ liệu khi thử lại.
     const pendingPayloadRef =
-        useRef<CreateCheckoutPayload | null>(null);
+        useRef<PendingCheckoutRequest | null>(null);
 
     // Không cập nhật giao diện sau khi rời trang.
     const mountedRef = useRef(false);
@@ -70,49 +95,92 @@ export default function CheckoutPage() {
             return;
         }
 
+        if (!preview) {
+            return;
+        }
+
         submittingRef.current = true;
         setSubmitting(true);
         setSubmitError(null);
 
         try {
-            // Chỉ tạo payload khi chưa có yêu cầu đang chờ kết quả.
+            // Chỉ tạo yêu cầu mới khi chưa có yêu cầu cần thử lại.
             if (!pendingPayloadRef.current) {
-                if (!preview?.address || !preview.canPlaceOrder) {
-                    setSubmitError(
-                        "Vui lòng kiểm tra địa chỉ nhận hàng.",
-                    );
+                if (!preview.address || !preview.canPlaceOrder) {
+                    setSubmitError("Vui lòng kiểm tra địa chỉ nhận hàng.");
                     return;
                 }
 
-                const items = preview.groups.flatMap((group) =>
-                    group.items.map((item) => ({
-                        cartItemId: item.cartItemId,
-                        quantity: item.quantity,
-                        expectedUnitPrice: item.unitPrice,
-                    })),
-                );
-
-                if (items.length === 0 || items.length > 100) {
-                    setSubmitError(
-                        "Mỗi lần đặt hàng cần từ 1 đến 100 dòng sản phẩm.",
+                if (preview.source === "cart") {
+                    const items = preview.groups.flatMap((group) =>
+                        group.items.map((item) => ({
+                            cartItemId: item.cartItemId,
+                            quantity: item.quantity,
+                            expectedUnitPrice: item.unitPrice,
+                        })),
                     );
-                    return;
-                }
 
-                pendingPayloadRef.current = {
-                    idempotencyKey: crypto.randomUUID(),
-                    addressId: preview.address.id,
-                    paymentMethod: "cod",
-                    items,
-                    expectedGrandTotal: preview.summary.grandTotal,
-                };
+                    if (items.length === 0 || items.length > 100) {
+                        setSubmitError(
+                            "Mỗi lần đặt hàng cần từ 1 đến 100 dòng sản phẩm.",
+                        );
+                        return;
+                    }
+
+                    pendingPayloadRef.current = {
+                        source: "cart",
+                        payload: {
+                            idempotencyKey: crypto.randomUUID(),
+                            addressId: preview.address.id,
+                            paymentMethod: preview.paymentMethod,
+                            items,
+                            expectedGrandTotal: preview.summary.grandTotal,
+                        },
+                    };
+                } else {
+                    const items = preview.groups.flatMap(
+                        (group) => group.items,
+                    );
+
+                    const item = items[0];
+
+                    // Mua ngay hiện chỉ hỗ trợ một biến thể mỗi lần.
+                    if (items.length !== 1 || !item) {
+                        setSubmitError(
+                            "Thông tin mua ngay phải gồm đúng một biến thể.",
+                        );
+                        return;
+                    }
+
+                    pendingPayloadRef.current = {
+                        source: "buy_now",
+                        payload: {
+                            idempotencyKey: crypto.randomUUID(),
+                            addressId: preview.address.id,
+                            paymentMethod: preview.paymentMethod,
+                            modelId: item.model.id,
+                            quantity: item.quantity,
+                            expectedUnitPrice: item.unitPrice,
+                            expectedGrandTotal: preview.summary.grandTotal,
+                        },
+                    };
+                }
             }
 
-            const result = await createCheckout(
-                pendingPayloadRef.current,
-            );
-            // Thông báo cho cart Header tải lại số lượng ở giỏ hàng.
-            window.dispatchEvent(new Event("cart-updated"));
+            // Dùng nguồn đã lưu cùng payload để gửi đúng API,
+            // kể cả khi đây là lần thử lại.
+            const pendingRequest = pendingPayloadRef.current;
+
+            const result =
+                pendingRequest.source === "cart"
+                    ? await createCheckout(pendingRequest.payload)
+                    : await createBuyNowCheckout(pendingRequest.payload);
+
+            // Đặt từ giỏ hàng mới xóa dòng trong giỏ,
+            // nên chỉ luồng này cần tải lại số lượng trên Header.
+            if (pendingRequest.source === "cart") {
+                window.dispatchEvent(new Event("cart-updated"));
+            }
 
             if (!mountedRef.current) return;
 
@@ -139,6 +207,7 @@ export default function CheckoutPage() {
                 "INSUFFICIENT_STOCK",
                 "AMOUNT_LIMIT_EXCEEDED",
                 "TOTAL_CHANGED",
+                "MODEL_UNAVAILABLE",
             ];
 
             if (
@@ -200,9 +269,49 @@ export default function CheckoutPage() {
         async function loadPreview() {
             setLoading(true);
             setError(null);
-
+            setPreview(null);
             try {
-                const data = await getCheckoutPreview(controller.signal);
+                let data: CheckoutPagePreview
+                if (source === "cart") {
+                    data = await getCheckoutPreview(controller.signal);
+
+                    if (controller.signal.aborted) return;
+                } else if (source === "buy_now") {
+                    // URL có thể bị sửa thủ công nên phải kiểm tra.
+                    if (
+                        !buyNowModelId ||
+                        !/^[1-9]\d{0,18}$/.test(buyNowModelId) ||
+                        BigInt(buyNowModelId) > 9223372036854775807n
+                    ) {
+                        throw new Error("ID biến thể mua ngay không hợp lệ.");
+                    }
+
+                    if (
+                        !buyNowQuantity ||
+                        !/^[1-9]\d{0,9}$/.test(buyNowQuantity)
+                    ) {
+                        throw new Error("Số lượng mua ngay không hợp lệ.");
+                    }
+
+                    const quantity = Number(buyNowQuantity);
+
+                    if (
+                        !Number.isInteger(quantity) ||
+                        quantity > 2147483647
+                    ) {
+                        throw new Error("Số lượng mua ngay vượt giới hạn.");
+                    }
+
+                    data = await getBuyNowCheckoutPreview(
+                        {
+                            modelId: buyNowModelId,
+                            quantity,
+                        },
+                        controller.signal,
+                    );
+                } else {
+                    throw new Error("Nguồn thanh toán không hợp lệ.");
+                }
 
                 if (controller.signal.aborted) return;
 
@@ -226,12 +335,13 @@ export default function CheckoutPage() {
                     setLoading(false);
                 }
             }
+
         }
 
         void loadPreview();
 
         return () => controller.abort();
-    }, [userId, retryCount]);
+    }, [userId, retryCount, source, buyNowModelId, buyNowQuantity,]);
 
     //Hàm đóng toast truyền qua component con
     const closeSuccessToast = useCallback(() => {
@@ -336,7 +446,7 @@ export default function CheckoutPage() {
                     <ul className="checkout-shop__items">
                         {group.items.map((item) => (
                             <li
-                                key={item.cartItemId}
+                                key={item.model.id}
                                 className="checkout-item"
                             >
                                 {item.product.imageUrl ? (

@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from "react-router";
 import type { ProductDetailData } from '../types/product';
 import { getProductById } from '../api/productsApi';
 import { getApiErrorMessage } from '../lib/api';
@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import './ProductDetailPage.css'
 import QuantityInput from '../components/cart/QuantityInput';
 import AddToCartButton from '../components/cart/AddToCartButton';
+import { useAuth } from "../auth/AuthContext";
 
 export default function ProductDetailPage() {
     const { productId } = useParams();
@@ -16,6 +17,17 @@ export default function ProductDetailPage() {
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
     //So luong san pham
     const [quantity, setQuantity] = useState<number>(1);
+
+    //State cho nut mua ngay
+    const navigate = useNavigate();
+    const { session } = useAuth();
+
+    const [buyNowNotice, setBuyNowNotice] = useState<{
+        productId: string;
+        modelId: string | undefined;
+        quantity: number;
+        message: string;
+    } | null>(null);
 
     useEffect(() => {
         let ignore = false
@@ -65,7 +77,70 @@ export default function ProductDetailPage() {
         ? Math.max(0, selectedModel.inventory.stock - selectedModel.inventory.reservedStock)
         : 99;
 
-    
+    //Xử lý khi ấn nút mua ngay
+    function handleBuyNow() {
+        if (loading || !product || product.id !== productId) return;
+
+        if (!session) {
+            navigate("/auth");
+            return;
+        }
+
+        function showError(message: string) {
+            setBuyNowNotice({
+                productId: product!.id,
+                modelId: selectedModel?.id,
+                quantity,
+                message,
+            });
+        }
+
+        setBuyNowNotice(null);
+
+        if (!selectedModel) {
+            showError(
+                product.tiers.length > 0
+                    ? "Vui lòng chọn đầy đủ phân loại sản phẩm."
+                    : "Sản phẩm hiện chưa có mẫu sẵn để mua.",
+            );
+            return;
+        }
+
+        if (
+            !Number.isInteger(quantity) ||
+            quantity <= 0 ||
+            quantity > 2147483647
+        ) {
+            showError("Vui lòng chọn số lượng hợp lệ.");
+            return;
+        }
+
+        if (quantity > availableStock) {
+            showError(
+                availableStock === 0
+                    ? "Biến thể đã hết hàng."
+                    : `Biến thể hiện chỉ còn ${availableStock} sản phẩm.`,
+            );
+            return;
+        }
+
+        const params = new URLSearchParams({
+            source: "buy_now",
+            modelId: selectedModel.id,
+            quantity: quantity.toString(),
+        });
+
+        navigate(`/checkout?${params.toString()}`);
+    }
+
+    // Giữ lỗi khi xử lý ấn nút mua ngay.
+    const visibleBuyNowError =
+        buyNowNotice?.productId === product?.id &&
+            buyNowNotice?.modelId === selectedModel?.id &&
+            buyNowNotice?.quantity === quantity
+            ? buyNowNotice?.message
+            : null;
+
     return (
         <section className='product-detail'>
             <div>
@@ -162,11 +237,16 @@ export default function ProductDetailPage() {
                                     onResetQuantity={setQuantity}
                                     hasVariants={product.tiers.length > 0}
                                 />
-                                <button className="product-detail-actions-buy-now">Mua ngay {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫</button>
+                                <button
+                                    type="button"
+                                    className="product-detail-actions-buy-now"
+                                    onClick={handleBuyNow}
+                                >Mua ngay {BigInt(selectedModel ? selectedModel.price : product.minPrice).toLocaleString('vi-VN')}₫</button>
                             </div>
+                            {visibleBuyNowError && (
+                                <p role="alert">{visibleBuyNowError}</p>
+                            )}
                         </div>
-
-
                     </div>
                 )}
             </div>

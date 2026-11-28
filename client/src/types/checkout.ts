@@ -30,6 +30,7 @@ export type CheckoutGroup = {
 };
 
 export type CheckoutPreview = {
+    source: "cart";
     address: UserAddress | null;
     groups: CheckoutGroup[];
     paymentMethod: "cod";
@@ -104,4 +105,32 @@ export type CreateCheckoutResponse = {
     message: string;
     reused: boolean;
     checkout: CheckoutResult;
+};
+
+// Dữ liệu gửi lên để xem trước Mua ngay.
+export type BuyNowPreviewPayload = {
+    modelId: string;
+    quantity: number;
+};
+
+// Giống dòng checkout thông thường nhưng không có cartItemId.
+export type BuyNowCheckoutItem = Omit<CheckoutItem,"cartItemId">;
+
+// Thay kiểu items bằng các dòng mua ngay.
+export type BuyNowCheckoutGroup = Omit<CheckoutGroup,"items"> & {
+    items: BuyNowCheckoutItem[];
+};
+
+// Giữ cấu trúc địa chỉ, tổng tiền... của checkout hiện tại.
+export type BuyNowCheckoutPreview = Omit<CheckoutPreview,"groups" | "source"> & {
+    source: "buy_now";
+    groups: BuyNowCheckoutGroup[];
+};
+// Dữ liệu gửi lên khi xác nhận đặt hàng Mua ngay.
+export type CreateBuyNowCheckoutPayload = BuyNowPreviewPayload & {
+    addressId: string;
+    paymentMethod: "cod";
+    expectedUnitPrice: string;
+    expectedGrandTotal: string;
+    idempotencyKey: string;
 };

@@ -21,7 +21,7 @@ import CheckoutPage from './pages/CheckoutPage'
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { pathname } = useLocation();
+  const { pathname,search } = useLocation();
   const isAuthPage = ['/auth', '/auth/'].includes(pathname);
   return (
     <>
@@ -43,7 +43,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />}/>
               <Route path="address" element={<AddressPage />} />
             </Route>
-            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/checkout" element={<CheckoutPage key={search}/>} />
             <Route path="/cart" element={<CartPage />} />
           </Route>
           <Route

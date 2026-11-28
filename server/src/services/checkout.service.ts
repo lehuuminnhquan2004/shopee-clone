@@ -5,6 +5,10 @@ import {
     createCheckoutRequestHash,
     type CreateCheckoutInput,
 } from "../validators/checkout.validator.js";
+import {
+    createBuyNowCheckoutRequestHash,
+    type CreateBuyNowCheckoutInput,
+} from "../validators/buynow.validator.js";
 
 const MAX_BIGINT = 9223372036854775807n;
 
@@ -25,38 +29,11 @@ export async function prepareCheckout(
     input: CreateCheckoutInput,
 ) {
     // Địa chỉ phải thuộc người đang đặt hàng và chưa bị xóa.
-    const address = await tx.userAddress.findFirst({
-        where: {
-            id: BigInt(input.addressId),
-            userId,
-            deletedAt: null,
-        },
-        select: {
-            receiverName: true,
-            receiverPhone: true,
-            addressDetail: true,
-            ward: {
-                select: {
-                    id: true,
-                    name: true,
-                    province: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                },
-            },
-        },
-    });
-
-    if (!address) {
-        throw new CheckoutError(
-            404,
-            "ADDRESS_UNAVAILABLE",
-            "Địa chỉ nhận hàng không tồn tại hoặc không còn khả dụng.",
-        );
-    }
+    const shippingAddressData = await getCheckoutShippingAddress(
+        tx,
+        userId,
+        input.addressId,
+    );
 
     // Chỉ lấy đúng các dòng người dùng đang xác nhận đặt.
     const cartItems = await tx.cartItem.findMany({
@@ -257,19 +234,7 @@ export async function prepareCheckout(
         shippingTotal,
         discountTotal,
         grandTotal,
-
-        // Sao chép địa chỉ để đơn cũ không đổi theo sổ địa chỉ.
-        shippingAddressData: {
-            receiverName: address.receiverName,
-            receiverPhone: address.receiverPhone,
-            shippingAddress: [
-                address.addressDetail,
-                address.ward.name,
-                address.ward.province.name,
-            ].join(", "),
-            wardId: address.ward.id,
-            provinceId: address.ward.province.id,
-        },
+        shippingAddressData,
     };
 }
 
@@ -277,10 +242,40 @@ export async function prepareCheckout(
 type PreparedCheckout = Awaited<
     ReturnType<typeof prepareCheckout>
 >;
+// Thông tin dùng để tạo OrderItem không cần cartItemId.
+type PreparedOrderItem = Omit<
+    PreparedCheckout["items"][number],
+    "cartItemId"
+>;
+
+// Dữ liệu chung mà transaction cần để tạo đơn.
+type PreparedOrderData = Omit<
+    PreparedCheckout,
+    "items"
+> & {
+    items: PreparedOrderItem[];
+};
+
+// source quyết định kiểu input của mỗi luồng.
+type CheckoutRequest =
+    | {
+        source: "cart";
+        input: CreateCheckoutInput;
+    }
+    | {
+        source: "buy_now";
+        input: CreateBuyNowCheckoutInput;
+    };
+
 //Hàm dữ tồn kho
 export async function reserveCheckoutStock(
     tx: Prisma.TransactionClient,
-    items: PreparedCheckout["items"],
+    items: Array<
+        Pick<
+            PreparedCheckout["items"][number],
+            "modelId" | "quantity" | "productName"
+        >
+    >,
 ): Promise<void> {
     // Luôn cập nhật theo cùng thứ tự modelId.
     // Giúp giảm khả năng các transaction khóa chéo nhau.
@@ -339,11 +334,18 @@ function generateCode(prefix: "CO" | "OD"): string {
 }
 
 //Tạo checkout và order
-export async function createCheckout(
+export async function executeCheckout(
     userId: bigint,
-    input: CreateCheckoutInput,
+    request: CheckoutRequest,
 ) {
-    const requestHash = createCheckoutRequestHash(input);
+    // Hai loại input đều có các trường này.
+    const { idempotencyKey, paymentMethod } = request.input;
+
+    const requestHash =
+        request.source === "cart"
+            ? createCheckoutRequestHash(request.input)
+            : createBuyNowCheckoutRequestHash(request.input);
+
     const maxAttempts = 3;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -356,7 +358,7 @@ export async function createCheckout(
                         where: {
                             userId_idempotencyKey: {
                                 userId,
-                                idempotencyKey: input.idempotencyKey,
+                                idempotencyKey,
                             },
                         },
                         select: {
@@ -381,11 +383,30 @@ export async function createCheckout(
                     }
 
                     // Kiểm tra lại dữ liệu và tính tiền từ database.
-                    const prepared = await prepareCheckout(
-                        tx,
-                        userId,
-                        input,
-                    );
+                    let prepared: PreparedOrderData;
+
+                    // Chỉ có dữ liệu khi đặt hàng từ giỏ.
+                    let cartItemIds: bigint[] = [];
+
+                    if (request.source === "cart") {
+                        const cartPrepared = await prepareCheckout(
+                            tx,
+                            userId,
+                            request.input,
+                        );
+
+                        prepared = cartPrepared;
+
+                        cartItemIds = cartPrepared.items.map(
+                            (item) => item.cartItemId,
+                        );
+                    } else {
+                        prepared = await prepareBuyNowCheckout(
+                            tx,
+                            userId,
+                            request.input,
+                        );
+                    }
 
                     // Giữ hàng trong cùng transaction tạo đơn.
                     await reserveCheckoutStock(tx, prepared.items);
@@ -398,9 +419,9 @@ export async function createCheckout(
                             shippingTotal: prepared.shippingTotal,
                             discountTotal: prepared.discountTotal,
                             grandTotal: prepared.grandTotal,
-                            paymentMethod: input.paymentMethod,
+                            paymentMethod,
                             paymentStatus: "unpaid",
-                            idempotencyKey: input.idempotencyKey,
+                            idempotencyKey,
                             requestHash,
                         },
                         select: {
@@ -411,7 +432,7 @@ export async function createCheckout(
                     // Gom sản phẩm theo shop.
                     const shopGroups = new Map<
                         bigint,
-                        PreparedCheckout["items"]
+                        PreparedOrderItem[]
                     >();
 
                     for (const item of prepared.items) {
@@ -481,24 +502,24 @@ export async function createCheckout(
                     }
 
                     // Chỉ xóa các dòng đã được đưa vào đơn.
-                    const deleted = await tx.cartItem.deleteMany({
-                        where: {
-                            userId,
-                            selected: true,
-                            id: {
-                                in: prepared.items.map(
-                                    (item) => item.cartItemId,
-                                ),
+                    if (cartItemIds.length > 0) {
+                        const deleted = await tx.cartItem.deleteMany({
+                            where: {
+                                userId,
+                                selected: true,
+                                id: {
+                                    in: cartItemIds,
+                                },
                             },
-                        },
-                    });
+                        });
 
-                    if (deleted.count !== prepared.items.length) {
-                        throw new CheckoutError(
-                            409,
-                            "CART_CHANGED",
-                            "Giỏ hàng đã thay đổi. Vui lòng tải lại checkout.",
-                        );
+                        if (deleted.count !== cartItemIds.length) {
+                            throw new CheckoutError(
+                                409,
+                                "CART_CHANGED",
+                                "Giỏ hàng đã thay đổi. Vui lòng tải lại checkout.",
+                            );
+                        }
                     }
 
                     const created = await tx.checkout.findUniqueOrThrow({
@@ -591,4 +612,254 @@ export async function createCheckout(
         "CHECKOUT_UNAVAILABLE",
         "Hiện không thể tạo đơn hàng. Vui lòng thử lại.",
     );
+}
+
+//Lấy địa chỉ 
+async function getCheckoutShippingAddress(
+    tx: Prisma.TransactionClient,
+    userId: bigint,
+    addressId: string,
+) {
+    const address = await tx.userAddress.findFirst({
+        where: {
+            id: BigInt(addressId),
+            userId,
+            deletedAt: null,
+        },
+        select: {
+            receiverName: true,
+            receiverPhone: true,
+            addressDetail: true,
+            ward: {
+                select: {
+                    id: true,
+                    name: true,
+                    province: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!address) {
+        throw new CheckoutError(
+            404,
+            "ADDRESS_UNAVAILABLE",
+            "Địa chỉ nhận hàng không tồn tại hoặc không còn khả dụng.",
+        );
+    }
+
+    return {
+        receiverName: address.receiverName,
+        receiverPhone: address.receiverPhone,
+        shippingAddress: [
+            address.addressDetail,
+            address.ward.name,
+            address.ward.province.name,
+        ].join(", "),
+        wardId: address.ward.id,
+        provinceId: address.ward.province.id,
+    };
+}
+
+//Chuẩn bị dữ liệu tạo checkout Buy Now
+export async function prepareBuyNowCheckout(
+    tx: Prisma.TransactionClient,
+    userId: bigint,
+    input: CreateBuyNowCheckoutInput,
+) {
+    const shippingAddressData = await getCheckoutShippingAddress(
+        tx,
+        userId,
+        input.addressId,
+    );
+
+    const model = await tx.productModel.findUnique({
+        where: {
+            id: BigInt(input.modelId),
+        },
+        select: {
+            id: true,
+            name: true,
+            sku: true,
+            price: true,
+            originalPrice: true,
+            status: true,
+
+            inventory: {
+                select: {
+                    stock: true,
+                    reservedStock: true,
+                },
+            },
+
+            tierOptions: {
+                orderBy: {
+                    tierOption: {
+                        tier: { position: "asc" },
+                    },
+                },
+                select: {
+                    tierOption: {
+                        select: { imageUrl: true },
+                    },
+                },
+            },
+
+            product: {
+                select: {
+                    id: true,
+                    name: true,
+                    status: true,
+                    deletedAt: true,
+                    images: {
+                        orderBy: [
+                            { position: "asc" },
+                            { id: "asc" },
+                        ],
+                        take: 1,
+                        select: { url: true },
+                    },
+                    shop: {
+                        select: {
+                            id: true,
+                            status: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!model) {
+        throw new CheckoutError(
+            404,
+            "MODEL_UNAVAILABLE",
+            "Biến thể không tồn tại.",
+        );
+    }
+
+    const product = model.product;
+    const shop = product.shop;
+
+    if (
+        model.status !== "active" ||
+        product.status !== "active" ||
+        product.deletedAt !== null ||
+        shop.status !== "active"
+    ) {
+        throw new CheckoutError(
+            409,
+            "PRODUCT_UNAVAILABLE",
+            "Sản phẩm hiện không thể mua.",
+        );
+    }
+
+    if (model.price < 0n || model.originalPrice < 0n) {
+        throw new CheckoutError(
+            409,
+            "INVALID_PRODUCT_PRICE",
+            "Giá sản phẩm không hợp lệ.",
+        );
+    }
+
+    // Không dùng giá client gửi để tạo đơn.
+    // Chỉ đối chiếu để phát hiện giá đã thay đổi.
+    if (model.price !== BigInt(input.expectedUnitPrice)) {
+        throw new CheckoutError(
+            409,
+            "PRICE_CHANGED",
+            "Giá sản phẩm đã thay đổi. Vui lòng tải lại checkout.",
+        );
+    }
+
+    const availableStock = model.inventory
+        ? model.inventory.stock - model.inventory.reservedStock
+        : 0;
+
+    if (input.quantity > availableStock) {
+        throw new CheckoutError(
+            409,
+            "INSUFFICIENT_STOCK",
+            "Số lượng còn lại không đủ. Vui lòng kiểm tra lại.",
+        );
+    }
+
+    const subtotal = model.price * BigInt(input.quantity);
+
+    if (subtotal > MAX_BIGINT) {
+        throw new CheckoutError(
+            400,
+            "AMOUNT_LIMIT_EXCEEDED",
+            "Tổng giá trị đơn hàng vượt giới hạn cho phép.",
+        );
+    }
+
+    // Đồng bộ với API preview hiện tại.
+    const shippingTotal = 0n;
+    const discountTotal = 0n;
+    const grandTotal = subtotal + shippingTotal - discountTotal;
+
+    if (grandTotal !== BigInt(input.expectedGrandTotal)) {
+        throw new CheckoutError(
+            409,
+            "TOTAL_CHANGED",
+            "Tổng thanh toán đã thay đổi. Vui lòng tải lại checkout.",
+        );
+    }
+
+    return {
+        // Dùng mảng để phần tạo order phía sau dùng chung
+        // với checkout giỏ hàng.
+        items: [
+            {
+                shopId: shop.id,
+                productId: product.id,
+                modelId: model.id,
+                productName: product.name,
+                modelName: model.name,
+                sku: model.sku,
+                imageUrl:
+                    model.tierOptions[0]?.tierOption.imageUrl ??
+                    product.images[0]?.url ??
+                    null,
+                unitPrice: model.price,
+                originalPrice: model.originalPrice,
+                quantity: input.quantity,
+                lineTotal: subtotal,
+            },
+        ],
+        subtotal,
+        shippingTotal,
+        discountTotal,
+        grandTotal,
+        shippingAddressData,
+    };
+}
+
+
+// Hàm tạo checkout dựa vào dữ liệu đưa vào chia ra cart và buy now.
+export async function createCheckout(
+    userId: bigint,
+    input: CreateCheckoutInput,
+) {
+    return executeCheckout(userId, {
+        source: "cart",
+        input,
+    });
+}
+
+// Controller Mua ngay sẽ gọi hàm này.
+export async function createBuyNowCheckout(
+    userId: bigint,
+    input: CreateBuyNowCheckoutInput,
+) {
+    return executeCheckout(userId, {
+        source: "buy_now",
+        input,
+    });
 }
